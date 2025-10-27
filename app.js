@@ -975,7 +975,10 @@
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <h3>${displayName}</h3>
-          <button class="table-rename-btn" title="Переименовать стол">✏️</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="table-clear-btn" title="Очистить стол">🗑️</button>
+            <button class="table-rename-btn" title="Переименовать стол">✏️</button>
+          </div>
         </div>
         <div class="table-meta"><span class="pill">Заказов: ${totalItems}</span></div>
       `;
@@ -1003,6 +1006,29 @@
             saveTableNames();
             render();
           }
+        );
+      });
+      
+      // Add clear button event listener
+      const clearBtn = card.querySelector('.table-clear-btn');
+      clearBtn.addEventListener('click', () => {
+        const hasOrders = tableOrders[n] && tableOrders[n].length > 0;
+        if (!hasOrders) {
+          alert('Стол уже пуст');
+          return;
+        }
+        
+        showConfirmModal(
+          'Очистить стол',
+          `Вы уверены, что хотите очистить все заказы из ${displayName}? Всего заказов: ${tableOrders[n].length}`,
+          () => {
+            // Clear all orders from table but keep the table
+            tableOrders[n] = [];
+            saveTableOrders();
+            render();
+          },
+          null,
+          'Очистить'
         );
       });
       
@@ -1747,7 +1773,7 @@
   };
 
   // Confirmation modal functions
-  function showConfirmModal(title, message, onConfirm, onCancel) {
+  function showConfirmModal(title, message, onConfirm, onCancel, confirmButtonText = 'Удалить') {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
     modal.innerHTML = `
@@ -1756,7 +1782,7 @@
         <div class="confirm-message">${message}</div>
         <div class="confirm-actions">
           <button class="btn secondary" id="confirm-cancel">Отмена</button>
-          <button class="btn danger" id="confirm-ok">Удалить</button>
+          <button class="btn danger" id="confirm-ok">${confirmButtonText}</button>
         </div>
       </div>
     `;

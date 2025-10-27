@@ -90,7 +90,7 @@ body {
 .table-card h3 { margin: 0; font-size: 16px; }
 .table-meta { color: var(--muted); font-size: 12px; }
 .table-actions { display: flex; gap: 8px; }
-.table-rename-btn { 
+.table-rename-btn, .table-clear-btn { 
   background: none; 
   border: none; 
   color: var(--muted); 
@@ -103,6 +103,10 @@ body {
 .table-rename-btn:hover { 
   background: var(--divider); 
   color: var(--text); 
+}
+.table-clear-btn:hover { 
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger); 
 }
 
 /* Rename table modal */
