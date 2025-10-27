@@ -1,0 +1,20 @@
+{
+  "name": "bullteam-pwa",
+  "version": "0.4.0",
+  "description": "PWA приложение для официантов",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "keywords": [
+    "pwa",
+    "restaurant",
+    "waiter"
+  ],
+  "author": "BullTeam",
+  "license": "MIT"
+}

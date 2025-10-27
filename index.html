@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="PWA приложение для официантов: столы, заказы, офлайн-очередь" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BullTeam" />
+    <meta name="msapplication-TileColor" content="#0f172a" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>BullTeam</title>
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+    <link rel="stylesheet" href="styles.css?v=0.5.0&t=20250120&fix=modal" />
+    <link rel="stylesheet" href="search-filters.css?v=0.5.0&t=20250120&fix=modal" />
+  </head>
+  <body>
+      <header class="app-header">
+        <h1>BullTeam</h1>
+        <button id="btn-install" class="btn secondary" hidden>Установить</button>
+      </header>
+
+    <main class="container" id="app"></main>
+
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="profile">
+        <div class="nav-icon">👤</div>
+        <span>Профиль</span>
+      </button>
+      <button class="nav-item" data-page="search">
+        <div class="nav-icon">🔍</div>
+        <span>Поиск</span>
+      </button>
+      <button class="nav-item active" data-page="tables">
+        <div class="nav-icon">🐂</div>
+        <span>Столы</span>
+      </button>
+      <button class="nav-item" data-page="learn">
+        <div class="nav-icon">📚</div>
+        <span>Изучение</span>
+      </button>
+      <button class="nav-item" data-page="settings">
+        <div class="nav-icon">⚙️</div>
+        <span>Настройки</span>
+      </button>
+    </nav>
+
+    <footer class="app-footer"></footer>
+
+    <script src="dishes-data.js?v=0.5.0&t=20250120&fix=modal"></script>
+    <script src="bar_drinks.js?v=0.5.0&t=20250120&fix=modal"></script>
+    <script src="app.js?v=0.5.0&t=20250120&fix=modal" defer></script>
+  </body>
+  </html>
+
+

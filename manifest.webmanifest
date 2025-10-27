@@ -1,0 +1,20 @@
+{
+  "name": "BullTeam PWA",
+  "short_name": "BullTeam",
+  "description": "PWA приложение для официантов: столы, заказы",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#0f172a",
+  "lang": "ru",
+  "categories": ["food", "business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
+
+

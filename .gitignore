@@ -1,0 +1,15 @@
+# Файлы для развертывания
+deploy/
+
+# Временные файлы
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Файлы с кодами (не нужны в продакшене)
+Коды.txt
+*.json
+
+# Node modules (если будут)
+node_modules/
