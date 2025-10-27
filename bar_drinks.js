@@ -505,7 +505,7 @@ const BAR_DRINKS_DATA = {
         "Лимонад с лесными ягодами"
       ],
       "price": "390 рублей",
-      "R_keeper": "686",
+      "R_keeper": "606",
       "category": "ЛИМОНАДЫ",
       "image": "./images/-.jpg"
     },

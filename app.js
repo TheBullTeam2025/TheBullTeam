@@ -279,78 +279,83 @@
     wrapper.className = 'page';
     
     const panel = document.createElement('section');
-    panel.className = 'panel';
+    panel.className = 'panel search-panel';
     panel.innerHTML = `
       <div class="panel-header">
         <h2>Поиск блюд</h2>
       </div>
       <div class="search-row">
-        <input id="search-main" placeholder="Начните вводить название блюда..." />
-        <button id="filter-btn" class="btn">Фильтры</button>
+        <input id="search-main" placeholder="Введите название блюда (например: борщ, стейк, салат...)" />
+        <button id="filter-btn" class="btn secondary" title="Фильтры">🔍</button>
       </div>
       
-      <!-- Фильтры -->
+      <!-- Filters Panel -->
       <div id="filters-panel" class="filters-panel" style="display: none;">
+        <div class="filters-header">
+          <h3>Фильтры</h3>
+          <button id="close-filters" class="btn-close">✕</button>
+        </div>
+        
         <div class="filter-group">
-          <label>Категория:</label>
-          <select id="category-filter">
+          <label class="filter-label">Категория:</label>
+          <select id="category-filter" class="filter-select">
             <option value="">Все категории</option>
           </select>
         </div>
         
         <div class="filter-group">
-          <label>Цена:</label>
-          <div class="price-range">
-            <input type="number" id="price-min" placeholder="От" min="0" />
-            <span>-</span>
-            <input type="number" id="price-max" placeholder="До" min="0" />
+          <label class="filter-label">Цена (₽):</label>
+          <div class="filter-range">
+            <input type="number" id="price-min" class="filter-input" placeholder="От" min="0" />
+            <span class="range-separator">—</span>
+            <input type="number" id="price-max" class="filter-input" placeholder="До" min="0" />
           </div>
         </div>
         
         <div class="filter-group">
-          <label>Аллергены:</label>
-          <div id="allergen-filters" class="checkbox-group">
-            <!-- Будет заполнено динамически -->
+          <label class="filter-label">Калории (ккал на 100г):</label>
+          <div class="filter-range">
+            <input type="number" id="calorie-min" class="filter-input" placeholder="От" min="0" />
+            <span class="range-separator">—</span>
+            <input type="number" id="calorie-max" class="filter-input" placeholder="До" min="0" />
           </div>
         </div>
         
         <div class="filter-group">
-          <label>Калории (на 100г):</label>
-          <div class="calorie-range">
-            <input type="number" id="calorie-min" placeholder="От" min="0" />
-            <span>-</span>
-            <input type="number" id="calorie-max" placeholder="До" min="0" />
-          </div>
-        </div>
-        
-        <div class="filter-group">
-          <label>Тип блюда:</label>
-          <div class="checkbox-group">
-            <label><input type="checkbox" id="filter-vegan" /> Веганское</label>
-            <label><input type="checkbox" id="filter-vegetarian" /> Вегетарианское</label>
-            <label><input type="checkbox" id="filter-gluten-free" /> Без глютена</label>
-            <label><input type="checkbox" id="filter-spicy" /> Острое</label>
-          </div>
+          <label class="filter-label">Сортировка:</label>
+          <select id="sort-select" class="filter-select">
+            <option value="relevance">По релевантности</option>
+            <option value="name">По названию (А-Я)</option>
+            <option value="price-asc">Цена: по возрастанию</option>
+            <option value="price-desc">Цена: по убыванию</option>
+            <option value="calories-asc">Калории: по возрастанию</option>
+            <option value="calories-desc">Калории: по убыванию</option>
+          </select>
         </div>
         
         <div class="filter-actions">
           <button id="apply-filters" class="btn primary">Применить</button>
           <button id="clear-filters" class="btn secondary">Сбросить</button>
         </div>
+        
+        <div class="active-filters" id="active-filters" style="display: none;"></div>
       </div>
       
       <div class="search-suggestions" id="search-suggestions" style="display: none;">
         <div class="suggestions-list" id="suggestions-list"></div>
       </div>
       
-      <div class="search-stats" id="search-stats" style="display: none;">
-        <span id="results-count">0 результатов</span>
-        <button id="sort-btn" class="btn small">Сортировка</button>
-      </div>
-      
-      <div class="menu-list" id="search-results">
-        <div style="padding: 20px; text-align: center; color: var(--muted);">
-          Начните поиск блюд для просмотра полного описания
+      <div class="search-results-container" id="search-results">
+        <div class="search-placeholder">
+          <div class="placeholder-icon">🔍</div>
+          <h3>Поиск блюд</h3>
+          <p>Введите название блюда для поиска</p>
+          <div class="search-examples">
+            <span class="example-tag">Борщ</span>
+            <span class="example-tag">Стейк Рибай</span>
+            <span class="example-tag">Цезарь</span>
+            <span class="example-tag">Лимонад</span>
+          </div>
         </div>
       </div>
     `;
@@ -360,17 +365,18 @@
     const suggestionsContainer = panel.querySelector('#search-suggestions');
     const suggestionsList = panel.querySelector('#suggestions-list');
     const resultsContainer = panel.querySelector('#search-results');
-    const filtersPanel = panel.querySelector('#filters-panel');
     const filterBtn = panel.querySelector('#filter-btn');
+    const filtersPanel = panel.querySelector('#filters-panel');
+    const closeFiltersBtn = panel.querySelector('#close-filters');
     const categoryFilter = panel.querySelector('#category-filter');
-    const allergenFilters = panel.querySelector('#allergen-filters');
     const priceMin = panel.querySelector('#price-min');
     const priceMax = panel.querySelector('#price-max');
     const calorieMin = panel.querySelector('#calorie-min');
     const calorieMax = panel.querySelector('#calorie-max');
-    const searchStats = panel.querySelector('#search-stats');
-    const resultsCount = panel.querySelector('#results-count');
-    const sortBtn = panel.querySelector('#sort-btn');
+    const sortSelect = panel.querySelector('#sort-select');
+    const applyFiltersBtn = panel.querySelector('#apply-filters');
+    const clearFiltersBtn = panel.querySelector('#clear-filters');
+    const activeFiltersContainer = panel.querySelector('#active-filters');
     
     let searchTimeout;
     let allDishes = [];
@@ -379,15 +385,21 @@
       category: '',
       priceMin: null,
       priceMax: null,
-      allergens: [],
       calorieMin: null,
       calorieMax: null,
-      vegan: false,
-      vegetarian: false,
-      glutenFree: false,
-      spicy: false
+      sort: 'relevance'
     };
-    let currentSort = 'relevance';
+    
+    // Filter button - toggle filters panel
+    filterBtn.addEventListener('click', () => {
+      const isVisible = filtersPanel.style.display !== 'none';
+      filtersPanel.style.display = isVisible ? 'none' : 'block';
+    });
+    
+    // Close filters button
+    closeFiltersBtn.addEventListener('click', () => {
+      filtersPanel.style.display = 'none';
+    });
     
     // Load dishes data
     loadDb().then(({dishes}) => {
@@ -395,8 +407,16 @@
       filteredDishes = [...allDishes];
       console.log('Loaded dishes for search:', allDishes.length);
       
-      // Initialize filters
-      initializeFilters();
+      // Initialize category filter options
+      initializeCategories();
+      
+      // Add click handlers to example tags
+      panel.querySelectorAll('.example-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          searchInput.value = tag.textContent;
+          searchInput.dispatchEvent(new Event('input'));
+        });
+      });
     }).catch(err => {
       console.error('Failed to load dishes for search:', err);
       resultsContainer.innerHTML = `
@@ -406,36 +426,39 @@
       `;
     });
     
-    function normalize(text) {
-      return (text || '').toLowerCase().trim();
-    }
-    
-    function initializeFilters() {
-      // Initialize categories
+    // Initialize categories
+    function initializeCategories() {
       const categories = [...new Set(allDishes.map(dish => dish.category).filter(Boolean))];
       categories.sort();
       categoryFilter.innerHTML = '<option value="">Все категории</option>' + 
         categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-      
-      // Initialize allergens
-      const allAllergens = new Set();
-      allDishes.forEach(dish => {
-        if (dish.allergens && Array.isArray(dish.allergens)) {
-          dish.allergens.forEach(allergen => {
-            if (allergen && allergen !== '-' && allergen.trim()) {
-              allAllergens.add(allergen.trim());
-            }
-          });
-        }
-      });
-      
-      const sortedAllergens = Array.from(allAllergens).sort();
-      allergenFilters.innerHTML = sortedAllergens.map(allergen => 
-        `<label><input type="checkbox" value="${allergen}" /> ${allergen}</label>`
-      ).join('');
     }
     
+    // Extract price from price string
+    function extractPrice(priceStr) {
+      if (!priceStr || priceStr === '—') return null;
+      const match = priceStr.match(/(\d+)/);
+      return match ? parseInt(match[1]) : null;
+    }
+    
+    // Extract calories from KBJU string
+    function extractCalories(kbjuStr) {
+      if (!kbjuStr || kbjuStr === '—') return null;
+      const match = kbjuStr.match(/К[.:\s]*(\d+)/i);
+      return match ? parseInt(match[1]) : null;
+    }
+    
+    // Apply filters
     function applyFilters() {
+      // Update filters from inputs
+      currentFilters.category = categoryFilter.value;
+      currentFilters.priceMin = priceMin.value ? parseInt(priceMin.value) : null;
+      currentFilters.priceMax = priceMax.value ? parseInt(priceMax.value) : null;
+      currentFilters.calorieMin = calorieMin.value ? parseInt(calorieMin.value) : null;
+      currentFilters.calorieMax = calorieMax.value ? parseInt(calorieMax.value) : null;
+      currentFilters.sort = sortSelect.value;
+      
+      // Filter dishes
       filteredDishes = allDishes.filter(dish => {
         // Category filter
         if (currentFilters.category && dish.category !== currentFilters.category) {
@@ -451,15 +474,6 @@
           }
         }
         
-        // Allergen filter (exclude dishes with selected allergens)
-        if (currentFilters.allergens.length > 0) {
-          const dishAllergens = (dish.allergens || []).map(a => a.toLowerCase().trim());
-          const hasExcludedAllergen = currentFilters.allergens.some(allergen => 
-            dishAllergens.includes(allergen.toLowerCase())
-          );
-          if (hasExcludedAllergen) return false;
-        }
-        
         // Calorie filter
         if (currentFilters.calorieMin !== null || currentFilters.calorieMax !== null) {
           const calories = extractCalories(dish.kbju);
@@ -469,52 +483,187 @@
           }
         }
         
-        // Type filters
-        if (currentFilters.vegan && !isVegan(dish)) return false;
-        if (currentFilters.vegetarian && !isVegetarian(dish)) return false;
-        if (currentFilters.glutenFree && !isGlutenFree(dish)) return false;
-        if (currentFilters.spicy && !isSpicy(dish)) return false;
-        
         return true;
       });
       
-      updateSearchResults();
+      // Sort dishes
+      sortDishes();
+      
+      // Show filtered results
+      showFilteredResults();
+      
+      // Update active filters display
+      updateActiveFilters();
+      
+      // Close filters panel
+      filtersPanel.style.display = 'none';
     }
     
-    function extractPrice(priceStr) {
-      if (!priceStr || priceStr === '—') return null;
-      const match = priceStr.match(/(\d+)/);
-      return match ? parseInt(match[1]) : null;
+    // Sort dishes
+    function sortDishes() {
+      if (currentFilters.sort === 'name') {
+        filteredDishes.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+      } else if (currentFilters.sort === 'price-asc') {
+        filteredDishes.sort((a, b) => {
+          const priceA = extractPrice(a.price) || 0;
+          const priceB = extractPrice(b.price) || 0;
+          return priceA - priceB;
+        });
+      } else if (currentFilters.sort === 'price-desc') {
+        filteredDishes.sort((a, b) => {
+          const priceA = extractPrice(a.price) || 0;
+          const priceB = extractPrice(b.price) || 0;
+          return priceB - priceA;
+        });
+      } else if (currentFilters.sort === 'calories-asc') {
+        filteredDishes.sort((a, b) => {
+          const calA = extractCalories(a.kbju) || 0;
+          const calB = extractCalories(b.kbju) || 0;
+          return calA - calB;
+        });
+      } else if (currentFilters.sort === 'calories-desc') {
+        filteredDishes.sort((a, b) => {
+          const calA = extractCalories(a.kbju) || 0;
+          const calB = extractCalories(b.kbju) || 0;
+          return calB - calA;
+        });
+      }
     }
     
-    function extractCalories(kbjuStr) {
-      if (!kbjuStr || kbjuStr === '—') return null;
-      const match = kbjuStr.match(/К\.\s*(\d+)/);
-      return match ? parseInt(match[1]) : null;
+    // Show filtered results
+    function showFilteredResults() {
+      if (filteredDishes.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="search-placeholder">
+            <div class="placeholder-icon">🔍</div>
+            <h3>Ничего не найдено</h3>
+            <p>Попробуйте изменить фильтры</p>
+          </div>
+        `;
+        return;
+      }
+      
+      resultsContainer.innerHTML = '';
+      const resultsGrid = document.createElement('div');
+      resultsGrid.className = 'filtered-results-grid';
+      
+      filteredDishes.slice(0, 50).forEach(dish => {
+        const card = document.createElement('div');
+        card.className = 'dish-result-card';
+        card.innerHTML = `
+          <div class="dish-result-name">${dish.name}</div>
+          <div class="dish-result-category">${dish.category || '—'}</div>
+          <div class="dish-result-footer">
+            <span class="dish-result-price">${dish.price || '—'}</span>
+            ${extractCalories(dish.kbju) ? `<span class="dish-result-calories">${extractCalories(dish.kbju)} ккал</span>` : ''}
+          </div>
+        `;
+        
+        card.addEventListener('click', () => {
+          selectDish(dish);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        resultsGrid.appendChild(card);
+      });
+      
+      resultsContainer.appendChild(resultsGrid);
+      
+      if (filteredDishes.length > 50) {
+        const moreInfo = document.createElement('div');
+        moreInfo.className = 'results-more-info';
+        moreInfo.textContent = `Показано 50 из ${filteredDishes.length} результатов`;
+        resultsContainer.appendChild(moreInfo);
+      }
     }
     
-    function isVegan(dish) {
-      const composition = (dish.composition || []).join(' ').toLowerCase();
-      const nonVeganIngredients = ['мясо', 'рыба', 'молоко', 'сыр', 'яйцо', 'мясной', 'рыбный', 'молочный'];
-      return !nonVeganIngredients.some(ingredient => composition.includes(ingredient));
+    // Update active filters display
+    function updateActiveFilters() {
+      const filters = [];
+      
+      if (currentFilters.category) {
+        filters.push(`Категория: ${currentFilters.category}`);
+      }
+      if (currentFilters.priceMin !== null || currentFilters.priceMax !== null) {
+        const priceText = `Цена: ${currentFilters.priceMin || 0}₽ — ${currentFilters.priceMax || '∞'}₽`;
+        filters.push(priceText);
+      }
+      if (currentFilters.calorieMin !== null || currentFilters.calorieMax !== null) {
+        const calText = `Калории: ${currentFilters.calorieMin || 0} — ${currentFilters.calorieMax || '∞'} ккал`;
+        filters.push(calText);
+      }
+      if (currentFilters.sort !== 'relevance') {
+        const sortNames = {
+          'name': 'По названию',
+          'price-asc': 'Цена ↑',
+          'price-desc': 'Цена ↓',
+          'calories-asc': 'Калории ↑',
+          'calories-desc': 'Калории ↓'
+        };
+        filters.push(`Сортировка: ${sortNames[currentFilters.sort]}`);
+      }
+      
+      if (filters.length > 0) {
+        activeFiltersContainer.style.display = 'block';
+        activeFiltersContainer.innerHTML = '<div class="active-filters-label">Активные фильтры:</div>' +
+          filters.map(f => `<span class="filter-tag">${f}</span>`).join('');
+      } else {
+        activeFiltersContainer.style.display = 'none';
+      }
     }
     
-    function isVegetarian(dish) {
-      const composition = (dish.composition || []).join(' ').toLowerCase();
-      const nonVegetarianIngredients = ['мясо', 'рыба', 'мясной', 'рыбный'];
-      return !nonVegetarianIngredients.some(ingredient => composition.includes(ingredient));
+    // Clear filters
+    function clearFilters() {
+      currentFilters = {
+        category: '',
+        priceMin: null,
+        priceMax: null,
+        calorieMin: null,
+        calorieMax: null,
+        sort: 'relevance'
+      };
+      
+      categoryFilter.value = '';
+      priceMin.value = '';
+      priceMax.value = '';
+      calorieMin.value = '';
+      calorieMax.value = '';
+      sortSelect.value = 'relevance';
+      
+      filteredDishes = [...allDishes];
+      activeFiltersContainer.style.display = 'none';
+      
+      resultsContainer.innerHTML = `
+        <div class="search-placeholder">
+          <div class="placeholder-icon">🔍</div>
+          <h3>Поиск блюд</h3>
+          <p>Введите название блюда для поиска</p>
+          <div class="search-examples">
+            <span class="example-tag">Борщ</span>
+            <span class="example-tag">Стейк Рибай</span>
+            <span class="example-tag">Цезарь</span>
+            <span class="example-tag">Лимонад</span>
+          </div>
+        </div>
+      `;
+      
+      // Re-add click handlers to example tags
+      resultsContainer.querySelectorAll('.example-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          searchInput.value = tag.textContent;
+          searchInput.dispatchEvent(new Event('input'));
+        });
+      });
+      
+      filtersPanel.style.display = 'none';
     }
     
-    function isGlutenFree(dish) {
-      const composition = (dish.composition || []).join(' ').toLowerCase();
-      const glutenIngredients = ['пшеница', 'рожь', 'ячмень', 'овёс', 'глютен', 'мука', 'хлеб', 'макароны'];
-      return !glutenIngredients.some(ingredient => composition.includes(ingredient));
-    }
+    // Event listeners
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    clearFiltersBtn.addEventListener('click', clearFilters);
     
-    function isSpicy(dish) {
-      const composition = (dish.composition || []).join(' ').toLowerCase();
-      const spicyIngredients = ['перец', 'острый', 'чили', 'хрен', 'горчица', 'имбирь'];
-      return spicyIngredients.some(ingredient => composition.includes(ingredient));
+    function normalize(text) {
+      return (text || '').toLowerCase().trim();
     }
     
     function findMatchingDishes(query) {
@@ -607,6 +756,10 @@
     function showDishDetails(dish) {
       resultsContainer.innerHTML = `
         <div class="dish-detail-card">
+          <div class="dish-detail-image">
+            🍽️
+          </div>
+          
           <div class="dish-detail-header">
             <h3>${dish.name}</h3>
             <div class="dish-detail-price">${calculatePrice(dish.price, dish.category) || dish.price || '—'}</div>
@@ -717,206 +870,6 @@
           }
         }
       }
-    });
-    
-    // Add filter functionality
-    function updateSearchResults() {
-      const query = searchInput.value.trim();
-      let results = [];
-      
-      if (query) {
-        results = findMatchingDishes(query);
-      } else {
-        results = filteredDishes.slice(0, 20); // Show first 20 dishes when no query
-      }
-      
-      // Sort results
-      if (currentSort === 'price-asc') {
-        results.sort((a, b) => {
-          const priceA = extractPrice(a.price) || 0;
-          const priceB = extractPrice(b.price) || 0;
-          return priceA - priceB;
-        });
-      } else if (currentSort === 'price-desc') {
-        results.sort((a, b) => {
-          const priceA = extractPrice(a.price) || 0;
-          const priceB = extractPrice(b.price) || 0;
-          return priceB - priceA;
-        });
-      } else if (currentSort === 'name') {
-        results.sort((a, b) => a.name.localeCompare(b.name));
-      }
-      
-      renderResults(results);
-      updateStats(results.length);
-    }
-    
-    function renderResults(dishes) {
-      resultsContainer.innerHTML = '';
-      
-      if (dishes.length === 0) {
-        resultsContainer.innerHTML = `
-          <div style="padding: 20px; text-align: center; color: var(--muted);">
-            Блюда не найдены
-          </div>
-        `;
-        return;
-      }
-      
-      const frag = document.createDocumentFragment();
-      
-      dishes.forEach(dish => {
-        const item = document.createElement('div');
-        item.className = 'menu-item';
-        item.innerHTML = `
-          <div class="menu-item-content">
-            <div class="menu-item-header">
-              <h3 class="menu-item-title">${dish.name}</h3>
-              <div class="menu-item-price">${dish.price || '—'}</div>
-            </div>
-            <div class="menu-item-meta">
-              <span class="menu-item-category">${dish.category || 'Без категории'}</span>
-              ${dish.gramm ? `<span class="menu-item-weight">${dish.gramm}</span>` : ''}
-            </div>
-            ${dish.composition && dish.composition.length > 0 ? `
-              <div class="menu-item-composition">
-                <strong>Состав:</strong> ${dish.composition.join(', ')}
-              </div>
-            ` : ''}
-            ${dish.allergens && dish.allergens.length > 0 && dish.allergens[0] !== '-' ? `
-              <div class="menu-item-allergens">
-                <strong>Аллергены:</strong> ${dish.allergens.join(', ')}
-              </div>
-            ` : ''}
-            ${dish.kbju && dish.kbju !== '-' ? `
-              <div class="menu-item-kbju">
-                <strong>КБЖУ:</strong> ${dish.kbju}
-              </div>
-            ` : ''}
-            ${dish.description && dish.description.length > 0 && dish.description[0] !== '-' ? `
-              <div class="menu-item-description">
-                ${dish.description.join(' ')}
-              </div>
-            ` : ''}
-          </div>
-        `;
-        
-        item.addEventListener('click', () => {
-          selectDish(dish);
-        });
-        
-        frag.appendChild(item);
-      });
-      
-      resultsContainer.appendChild(frag);
-    }
-    
-    function updateStats(count) {
-      resultsCount.textContent = `${count} результатов`;
-      searchStats.style.display = count > 0 ? 'flex' : 'none';
-    }
-    
-    // Event listeners
-    filterBtn.addEventListener('click', () => {
-      filtersPanel.style.display = filtersPanel.style.display === 'none' ? 'block' : 'none';
-    });
-    
-    categoryFilter.addEventListener('change', (e) => {
-      currentFilters.category = e.target.value;
-    });
-    
-    priceMin.addEventListener('input', (e) => {
-      currentFilters.priceMin = e.target.value ? parseInt(e.target.value) : null;
-    });
-    
-    priceMax.addEventListener('input', (e) => {
-      currentFilters.priceMax = e.target.value ? parseInt(e.target.value) : null;
-    });
-    
-    calorieMin.addEventListener('input', (e) => {
-      currentFilters.calorieMin = e.target.value ? parseInt(e.target.value) : null;
-    });
-    
-    calorieMax.addEventListener('input', (e) => {
-      currentFilters.calorieMax = e.target.value ? parseInt(e.target.value) : null;
-    });
-    
-    // Allergen filters
-    allergenFilters.addEventListener('change', (e) => {
-      if (e.target.type === 'checkbox') {
-        const checkedBoxes = allergenFilters.querySelectorAll('input[type="checkbox"]:checked');
-        currentFilters.allergens = Array.from(checkedBoxes).map(cb => cb.value);
-      }
-    });
-    
-    // Type filters
-    document.getElementById('filter-vegan').addEventListener('change', (e) => {
-      currentFilters.vegan = e.target.checked;
-    });
-    
-    document.getElementById('filter-vegetarian').addEventListener('change', (e) => {
-      currentFilters.vegetarian = e.target.checked;
-    });
-    
-    document.getElementById('filter-gluten-free').addEventListener('change', (e) => {
-      currentFilters.glutenFree = e.target.checked;
-    });
-    
-    document.getElementById('filter-spicy').addEventListener('change', (e) => {
-      currentFilters.spicy = e.target.checked;
-    });
-    
-    // Apply and clear filters
-    document.getElementById('apply-filters').addEventListener('click', () => {
-      applyFilters();
-      filtersPanel.style.display = 'none';
-    });
-    
-    document.getElementById('clear-filters').addEventListener('click', () => {
-      // Reset all filters
-      currentFilters = {
-        category: '',
-        priceMin: null,
-        priceMax: null,
-        allergens: [],
-        calorieMin: null,
-        calorieMax: null,
-        vegan: false,
-        vegetarian: false,
-        glutenFree: false,
-        spicy: false
-      };
-      
-      // Reset UI
-      categoryFilter.value = '';
-      priceMin.value = '';
-      priceMax.value = '';
-      calorieMin.value = '';
-      calorieMax.value = '';
-      allergenFilters.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-      document.getElementById('filter-vegan').checked = false;
-      document.getElementById('filter-vegetarian').checked = false;
-      document.getElementById('filter-gluten-free').checked = false;
-      document.getElementById('filter-spicy').checked = false;
-      
-      applyFilters();
-    });
-    
-    // Sort functionality
-    sortBtn.addEventListener('click', () => {
-      const sortOptions = [
-        { value: 'relevance', label: 'По релевантности' },
-        { value: 'name', label: 'По названию' },
-        { value: 'price-asc', label: 'Цена: по возрастанию' },
-        { value: 'price-desc', label: 'Цена: по убыванию' }
-      ];
-      
-      const currentIndex = sortOptions.findIndex(opt => opt.value === currentSort);
-      const nextIndex = (currentIndex + 1) % sortOptions.length;
-      currentSort = sortOptions[nextIndex].value;
-      
-      sortBtn.textContent = sortOptions[nextIndex].label;
-      updateSearchResults();
     });
     
     return wrapper;
