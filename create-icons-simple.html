@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание иконок - BullTeam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #0f172a; }
+        canvas { 
+            border: 2px solid #3b82f6;
+            margin: 20px 0;
+            display: block;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 10px 10px 0;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .step {
+            background: #e0f2fe;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐂 Создание иконок BullTeam PWA</h1>
+        
+        <div class="step">
+            <h3>📋 Инструкция:</h3>
+            <ol>
+                <li>Нажмите на кнопки ниже для скачивания иконок</li>
+                <li>Сохраните файлы <strong>СТРОГО</strong> с именами:<br>
+                    - <code>icon-192.png</code><br>
+                    - <code>icon-512.png</code>
+                </li>
+                <li>Переместите оба файла в папку <code>icons/</code> вашего проекта</li>
+                <li>Проверьте, что файлы на месте</li>
+            </ol>
+        </div>
+
+        <h2>Иконка 192×192</h2>
+        <canvas id="canvas192" width="192" height="192"></canvas>
+        <button onclick="downloadIcon(192)">📥 Скачать icon-192.png</button>
+
+        <h2>Иконка 512×512</h2>
+        <canvas id="canvas512" width="512" height="512"></canvas>
+        <button onclick="downloadIcon(512)">📥 Скачать icon-512.png</button>
+
+        <div class="success" id="successMsg" style="display:none;">
+            <h3>✅ Иконки скачаны!</h3>
+            <p>Теперь:</p>
+            <ol>
+                <li>Переместите файлы в папку <code>icons/</code></li>
+                <li>Сделайте git commit и push</li>
+                <li>Обновите страницу на GitHub Pages</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let downloaded = 0;
+
+        function drawIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Очистка
+            ctx.clearRect(0, 0, size, size);
+            
+            // Фон с градиентом
+            const gradient = ctx.createLinearGradient(0, 0, 0, size);
+            gradient.addColorStop(0, '#1e3a8a');
+            gradient.addColorStop(1, '#0f172a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Рисуем бычью голову (упрощенно)
+            ctx.fillStyle = '#ffffff';
+            
+            // Основной круг головы
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Рога
+            ctx.fillStyle = '#fbbf24';
+            // Левый рог
+            ctx.beginPath();
+            ctx.moveTo(size * 0.3, size * 0.35);
+            ctx.quadraticCurveTo(size * 0.25, size * 0.2, size * 0.28, size * 0.25);
+            ctx.lineTo(size * 0.35, size * 0.3);
+            ctx.fill();
+            
+            // Правый рог
+            ctx.beginPath();
+            ctx.moveTo(size * 0.7, size * 0.35);
+            ctx.quadraticCurveTo(size * 0.75, size * 0.2, size * 0.72, size * 0.25);
+            ctx.lineTo(size * 0.65, size * 0.3);
+            ctx.fill();
+            
+            // Глаза
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(size * 0.42, size * 0.45, size * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.58, size * 0.45, size * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Нос
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.ellipse(size/2, size * 0.55, size * 0.08, size * 0.06, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Ноздри
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(size * 0.47, size * 0.55, size * 0.015, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.53, size * 0.55, size * 0.015, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Текст "BT"
+            ctx.fillStyle = '#3b82f6';
+            ctx.font = `bold ${size * 0.15}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('BT', size/2, size * 0.75);
+        }
+
+        function downloadIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            downloaded++;
+            if (downloaded >= 2) {
+                document.getElementById('successMsg').style.display = 'block';
+            }
+        }
+
+        // Рисуем при загрузке
+        window.onload = function() {
+            drawIcon(192);
+            drawIcon(512);
+        };
+    </script>
+</body>
+</html>
+
