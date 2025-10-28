@@ -1,15 +1,17 @@
-const CACHE_NAME = 'waiter-pwa-v5';
+const CACHE_NAME = 'waiter-pwa-v6';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/dishes-data.js',
-  '/bar_drinks-data.js',
-  '/dishes.json',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './dishes-data.js',
+  './bar_drinks.js',
+  './bar_drinks-data.js',
+  './search-filters.css',
+  './dishes.json',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
