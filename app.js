@@ -3034,10 +3034,17 @@
       grade: profile.grade || '—',
       location: profile.location || '—'
     };
+    const photoUrl = profile.photo ? `data:image/jpeg;base64,${profile.photo}` : null;
 
     wrapper.innerHTML = `
       <div class="profile-header">
-        <div class="profile-avatar">👤</div>
+        <div class="profile-avatar" id="profile-avatar">
+          ${photoUrl ? `<img src="${photoUrl}" alt="Фото профиля" class="avatar-image" />` : '<span class="avatar-placeholder">👤</span>'}
+        </div>
+        <label for="pf-photo" class="btn secondary" style="margin-top:12px; display:inline-block; cursor:pointer;">
+          ${photoUrl ? 'Изменить фото' : 'Добавить фото'}
+        </label>
+        <input type="file" id="pf-photo" accept="image/*" style="display:none;" />
         <div class="profile-name">${p.name}</div>
         <div class="profile-role">${p.role}</div>
       </div>
@@ -3048,6 +3055,7 @@
         <div class="settings-item"><div class="settings-item-label">Роль</div><input id="pf-role" value="${p.role}" /></div>
         <div class="settings-item"><div class="settings-item-label">Грейд</div><input id="pf-grade" value="${p.grade}" /></div>
         <div class="settings-item"><div class="settings-item-label">Локация</div><input id="pf-location" value="${p.location}" placeholder="Напр.: Бык Дмитровка" /></div>
+        ${photoUrl ? '<div class="settings-item"><div class="settings-item-label">Фото</div><button id="pf-remove-photo" class="btn danger" style="font-size:12px;">Удалить фото</button></div>' : ''}
         <div style="padding:12px; display:flex; gap:8px; justify-content:flex-end;">
           <button id="pf-save" class="btn primary">Сохранить</button>
         </div>
@@ -3093,6 +3101,37 @@
     //   saveTableMode();
     // });
     
+    // Photo upload handler
+    const photoInput = wrapper.querySelector('#pf-photo');
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Фото слишком большое (макс. 2 МБ)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result.split(',')[1];
+        profile.photo = base64;
+        saveProfile();
+        render();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Remove photo handler
+    const removePhotoBtn = wrapper.querySelector('#pf-remove-photo');
+    if (removePhotoBtn) {
+      removePhotoBtn.addEventListener('click', () => {
+        if (confirm('Удалить фото?')) {
+          delete profile.photo;
+          saveProfile();
+          render();
+        }
+      });
+    }
+
     // Save profile
     wrapper.querySelector('#pf-save').addEventListener('click', () => {
       profile.name = (wrapper.querySelector('#pf-name').value || '').trim();
