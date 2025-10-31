@@ -294,6 +294,20 @@
     // 2. Холодные блюда и закуски (все остальное - салаты, закуски, стрипсы и т.д.)
     return 2; // Холодные блюда и закуски
   }
+
+  // Helpers to compute totals
+  function parsePriceToNumber(text) {
+    const m = String(text || '').match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function computeTableTotalAmount(tableNum) {
+    const items = Array.isArray(tableOrders[tableNum]) ? tableOrders[tableNum] : [];
+    return items.reduce((sum, o) => {
+      const unit = parsePriceToNumber(o.calculatedPrice) || parsePriceToNumber(o.price);
+      const qty = o.quantity || 1;
+      return sum + unit * qty;
+    }, 0);
+  }
   
   // Function to sort table orders by category
   function sortTableOrdersByCategory(tableNum) {
@@ -1136,7 +1150,7 @@
       const itemsArr = Array.isArray(tableOrders[n]) ? tableOrders[n] : [];
       const totalItems = itemsArr.reduce((sum, o) => sum + (o.quantity || 0), 0);
       const createdAt = itemsArr.length ? new Date(Math.min(...itemsArr.map(i => i.addedAt || Date.now()))) : null;
-      const updatedAt = itemsArr.length ? new Date(Math.max(...itemsArr.map(i => i.addedAt || Date.now()))) : null;
+      const totalAmount = computeTableTotalAmount(n);
       const displayName = getTableDisplayName(n);
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -1148,43 +1162,20 @@
         </div>
         <div class="table-meta">
           <span class="pill">Заказов: ${totalItems}</span>
-          ${createdAt ? `<span class=\"pill\">Открыт: ${createdAt.toLocaleDateString('ru-RU')} ${createdAt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</span>` : ''}
-          ${updatedAt ? `<span class=\"pill\">Обновлён: ${updatedAt.toLocaleDateString('ru-RU')} ${updatedAt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</span>` : ''}
+          ${createdAt ? `<span class=\"pill\">Открыт: ${createdAt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</span>` : ''}
+          <span class=\"pill\">Итого: ${totalAmount} ₽</span>
         </div>
       `;
       const actions = document.createElement('div');
       actions.className = 'table-actions';
       const openBtn = document.createElement('button'); openBtn.className = 'btn primary'; openBtn.textContent = 'Открыть';
       openBtn.addEventListener('click', () => navigate(`#/table/${n}`));
-      const editNumBtn = document.createElement('button'); editNumBtn.className = 'btn secondary'; editNumBtn.textContent = 'Редактировать номер';
-      editNumBtn.addEventListener('click', () => {
-        const newNumStr = prompt('Новый номер стола?', String(n));
-        if (!newNumStr) return;
-        const newNum = Number(newNumStr);
-        if (!Number.isInteger(newNum) || newNum <= 0) { alert('Введите корректный номер'); return; }
-        if (activeTables.includes(newNum) && newNum !== n) { alert('Стол с таким номером уже существует'); return; }
-        if (newNum === n) return;
-        // Move orders and name
-        const ordersCopy = tableOrders[n] ? [...tableOrders[n]] : [];
-        tableOrders[newNum] = ordersCopy;
-        delete tableOrders[n];
-        if (tableNames[n]) { tableNames[newNum] = tableNames[n]; delete tableNames[n]; }
-        // Update active tables
-        activeTables = activeTables.filter(t => t !== n);
-        activeTables.push(newNum);
-        activeTables.sort((a,b)=>a-b);
-        saveTableOrders();
-        saveTableNames();
-        saveTables();
-        render();
-      });
-      const removeBtn = document.createElement('button'); removeBtn.className = 'btn danger'; removeBtn.textContent = 'Убрать';
+      const removeBtn = document.createElement('button'); removeBtn.className = 'btn danger'; removeBtn.textContent = 'Удалить';
       removeBtn.addEventListener('click', () => {
         const hasOrders = tableOrders[n] && tableOrders[n].length > 0;
         const message = hasOrders 
-          ? `${displayName} содержит ${tableOrders[n].length} заказов. Вы точно хотите удалить стол со всеми заказами?`
-          : `Вы точно хотите удалить ${displayName}?`;
-        
+          ? `${displayName} содержит ${tableOrders[n].length} заказов. Удалить стол и все заказы?`
+          : `Удалить ${displayName}?`;
         showConfirmModal(
           'Удалить стол',
           message,
@@ -1253,7 +1244,7 @@
         showRenameTableModal(n);
       });
       
-      actions.appendChild(openBtn); actions.appendChild(editNumBtn); actions.appendChild(removeBtn);
+      actions.appendChild(openBtn); actions.appendChild(removeBtn);
       card.appendChild(actions); frag.appendChild(card);
     });
     grid.appendChild(frag);
@@ -2924,13 +2915,14 @@
         const dt = h.closedAt || h.updatedAt || h.createdAt || Date.now();
         const d = new Date(dt);
         row.innerHTML = `
-          <div class="history-row-main">
-            <div class="history-title">${h.tableName || ('Стол ' + h.table)}</div>
-            <div class="history-meta">${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
-            <div class="history-total">${h.total || 0} ₽</div>
-          </div>
-          <div class="history-items" style="display:none;">${(h.items||[]).map(i => `${i.itemName} ×${i.quantity}`).join(', ') || '—'}</div>
-        `;
+          <div class="history-card">
+            <div class="history-row-main">
+              <div class="history-title">${h.tableName || ('Стол ' + h.table)}</div>
+              <div class="history-meta">${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
+              <div class="history-total">${h.total || 0} ₽</div>
+            </div>
+            <div class="history-items" style="display:none;">${(h.items||[]).map(i => `${i.itemName} ×${i.quantity}`).join(', ') || '—'}</div>
+          </div>`;
         row.addEventListener('click', () => {
           const el = row.querySelector('.history-items');
           el.style.display = el.style.display === 'none' ? 'block' : 'none';
