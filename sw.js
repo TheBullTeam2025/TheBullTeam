@@ -1,4 +1,7 @@
-const CACHE_NAME = 'waiter-pwa-v6';
+const VERSION = 'v0.5.0';
+const PRECACHE = `thebullteam-precache-${VERSION}`;
+const RUNTIME = `thebullteam-runtime-${VERSION}`;
+
 const ASSETS = [
   './',
   './index.html',
@@ -6,17 +9,16 @@ const ASSETS = [
   './app.js',
   './dishes-data.js',
   './bar_drinks.js',
-  './bar_drinks-data.js',
   './search-filters.css',
   './dishes.json',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/The Bull-128.png',
+  './icons/The Bull-512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(PRECACHE).then(cache => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
@@ -24,7 +26,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      keys.filter(k => k !== PRECACHE && k !== RUNTIME).map(k => caches.delete(k))
     ))
   );
   self.clients.claim();
@@ -34,41 +36,45 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // Always fetch dishes.json fresh from network
-  if (request.url.includes('dishes.json')) {
+  // Network-first for menu data JSON (keeps data fresh)
+  if (request.url.includes('dishes.json') || request.url.includes('bar_drinks.json')) {
     event.respondWith(
-      fetch(request).then((resp) => {
-        const respClone = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, respClone)).catch(() => {});
-        return resp;
-      }).catch(() => {
-        // Fallback for dishes.json
-        return new Response('{"dishes":[]}', {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
+      fetch(request)
+        .then((networkResponse) => {
+          const copy = networkResponse.clone();
+          caches.open(RUNTIME).then(cache => cache.put(request, copy)).catch(() => {});
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return (
+            cached || new Response('{"dishes":[]}', { headers: { 'Content-Type': 'application/json' } })
+          );
+        })
     );
     return;
   }
 
+  // Stale-while-revalidate for other requests
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then((resp) => {
-        const respClone = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, respClone)).catch(() => {});
-        return resp;
-      }).catch(() => {
-        // Fallback for other JSON files
-        if (request.url.endsWith('.json')) {
-          return new Response('{"dishes":[]}', {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        return cached;
-      });
+    caches.match(request).then((cached) => {
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          const copy = networkResponse.clone();
+          caches.open(RUNTIME).then(cache => cache.put(request, copy)).catch(() => {});
+          return networkResponse;
+        })
+        .catch(() => cached);
+      return cached || fetchPromise;
     })
   );
+});
+
+// Allow the page to tell SW to skip waiting
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 

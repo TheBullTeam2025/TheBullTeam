@@ -4,7 +4,13 @@
     tableOrders: 'waiter.tableOrders',
     tables: 'waiter.tables',
     tableMode: 'waiter.tableMode',
-    tableNames: 'waiter.tableNames'
+    tableNames: 'waiter.tableNames',
+    orderHistory: 'waiter.orderHistory',
+    meta: 'waiter.meta',
+    activePage: 'waiter.activePage',
+    profile: 'waiter.profile',
+    searchFilters: 'waiter.searchFilters',
+    learnProgress: 'waiter.learnProgress'
   };
 
 
@@ -14,6 +20,12 @@
   let activeTables = [];
   /** @type {Object<number, string>} */
   let tableNames = {};
+  /** @type {Array<any>} */
+  let orderHistory = [];
+  /** @type {{ lastPurgeMonth?: string } } */
+  let meta = {};
+  /** @type {{ name?: string, role?: string, grade?: string, location?: string }} */
+  let profile = {};
   /** @type {{dishes:any[]} | null} */
   let db = null;
   
@@ -30,11 +42,56 @@
     try { activeTables = JSON.parse(localStorage.getItem(STORAGE_KEYS.tables) || '[]'); } catch { activeTables = []; }
     try { tableMode = localStorage.getItem(STORAGE_KEYS.tableMode) || 'todo'; } catch { tableMode = 'todo'; }
     try { tableNames = JSON.parse(localStorage.getItem(STORAGE_KEYS.tableNames) || '{}'); } catch { tableNames = {}; }
+    try { orderHistory = JSON.parse(localStorage.getItem(STORAGE_KEYS.orderHistory) || '[]'); } catch { orderHistory = []; }
+    try { meta = JSON.parse(localStorage.getItem(STORAGE_KEYS.meta) || '{}'); } catch { meta = {}; }
+    try { currentPage = localStorage.getItem(STORAGE_KEYS.activePage) || 'tables'; } catch { currentPage = 'tables'; }
+    try { profile = JSON.parse(localStorage.getItem(STORAGE_KEYS.profile) || '{}'); } catch { profile = {}; }
   }
   function saveTableOrders() { localStorage.setItem(STORAGE_KEYS.tableOrders, JSON.stringify(tableOrders)); }
   function saveTables() { localStorage.setItem(STORAGE_KEYS.tables, JSON.stringify(activeTables)); }
   function saveTableMode() { localStorage.setItem(STORAGE_KEYS.tableMode, tableMode); }
   function saveTableNames() { localStorage.setItem(STORAGE_KEYS.tableNames, JSON.stringify(tableNames)); }
+  function saveOrderHistory() { localStorage.setItem(STORAGE_KEYS.orderHistory, JSON.stringify(orderHistory)); }
+  function saveMeta() { localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta)); }
+  function saveProfile() { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)); }
+
+  // Purge history monthly to avoid storage bloat
+  function ensureMonthlyPurge(daysToKeep = 31) {
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (meta.lastPurgeMonth === monthKey) return;
+
+    const cutoff = now.getTime() - daysToKeep * 24 * 60 * 60 * 1000;
+    orderHistory = (orderHistory || []).filter(h => {
+      const closedAt = typeof h?.closedAt === 'number' ? h.closedAt : 0;
+      return closedAt >= cutoff;
+    });
+    meta.lastPurgeMonth = monthKey;
+    saveOrderHistory();
+    saveMeta();
+  }
+
+  // Compute monthly metrics for profile
+  function computeMonthlyMetrics(targetDate = new Date()) {
+    const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+    const isSameMonth = (ts) => {
+      const d = new Date(ts);
+      return d.getFullYear() === targetDate.getFullYear() && d.getMonth() === targetDate.getMonth();
+    };
+    const monthOrders = (orderHistory || []).filter(h => h.closedAt ? isSameMonth(h.closedAt) : isSameMonth(h.createdAt));
+    const numTables = monthOrders.length;
+    const revenue = monthOrders.reduce((sum, h) => sum + (h.total || 0), 0);
+    const averageCheck = numTables ? Math.round(revenue / numTables) : 0;
+    const dishSales = new Map();
+    for (const h of monthOrders) {
+      for (const item of (h.items || [])) {
+        const key = item.itemName || item.name || item.id || 'unknown';
+        dishSales.set(key, (dishSales.get(key) || 0) + (item.quantity || 1));
+      }
+    }
+    const top3 = Array.from(dishSales.entries()).sort((a,b) => b[1]-a[1]).slice(0,3).map(([name, qty]) => ({ name, qty }));
+    return { monthKey, numTables, revenue, averageCheck, top3 };
+  }
 
   // Function to get current app version with timestamp
   function getAppVersion() {
@@ -176,9 +233,15 @@
     const weekdayPrice = parseInt(prices[0]);
     const weekendPrice = parseInt(prices[1]);
     
+    // Use Moscow time for pricing rules
     const now = new Date();
-    const isWeekend = now.getDay() === 0 || now.getDay() === 6; // Sunday or Saturday
-    const isBefore5PM = now.getHours() < 17;
+    const moscowString = now.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
+    const [datePart, timePart] = moscowString.split(',').map(s => s.trim());
+    const parts = timePart ? timePart.split(':').map(n => parseInt(n, 10)) : [now.getHours(), now.getMinutes(), 0];
+    const hours = parts[0] || 0;
+    const moscowDay = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' })).getDay();
+    const isWeekend = moscowDay === 0 || moscowDay === 6; // Sunday or Saturday
+    const isBefore5PM = hours < 17;
     
     if (isWeekend || !isBefore5PM) {
       return `${weekendPrice} ₽`;
@@ -264,6 +327,7 @@
   // Page navigation
   function setPage(page) {
     currentPage = page;
+    try { localStorage.setItem(STORAGE_KEYS.activePage, currentPage); } catch {}
     updateNavItems();
     render();
   }
@@ -320,6 +384,11 @@
             <input type="number" id="calorie-max" class="filter-input" placeholder="До" min="0" />
           </div>
         </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Исключить аллергены (через запятую):</label>
+        <input type="text" id="allergens-exclude" class="filter-input" placeholder="например: глютен, орехи, лактоза" />
+      </div>
         
         <div class="filter-group">
           <label class="filter-label">Сортировка:</label>
@@ -373,6 +442,7 @@
     const priceMax = panel.querySelector('#price-max');
     const calorieMin = panel.querySelector('#calorie-min');
     const calorieMax = panel.querySelector('#calorie-max');
+    const allergensExcludeInput = panel.querySelector('#allergens-exclude');
     const sortSelect = panel.querySelector('#sort-select');
     const applyFiltersBtn = panel.querySelector('#apply-filters');
     const clearFiltersBtn = panel.querySelector('#clear-filters');
@@ -387,6 +457,7 @@
       priceMax: null,
       calorieMin: null,
       calorieMax: null,
+      allergensExclude: [],
       sort: 'relevance'
     };
     
@@ -409,6 +480,30 @@
       
       // Initialize category filter options
       initializeCategories();
+      // Restore saved filters
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.searchFilters) || 'null');
+        if (saved && typeof saved === 'object') {
+          currentFilters = {
+            category: saved.category || '',
+            priceMin: saved.priceMin ?? null,
+            priceMax: saved.priceMax ?? null,
+            calorieMin: saved.calorieMin ?? null,
+            calorieMax: saved.calorieMax ?? null,
+            allergensExclude: Array.isArray(saved.allergensExclude) ? saved.allergensExclude : [],
+            sort: saved.sort || 'relevance'
+          };
+          categoryFilter.value = currentFilters.category;
+          priceMin.value = currentFilters.priceMin ?? '';
+          priceMax.value = currentFilters.priceMax ?? '';
+          calorieMin.value = currentFilters.calorieMin ?? '';
+          calorieMax.value = currentFilters.calorieMax ?? '';
+          allergensExcludeInput.value = (currentFilters.allergensExclude || []).join(', ');
+          sortSelect.value = currentFilters.sort;
+          // Apply immediately to reflect saved state
+          applyFilters();
+        }
+      } catch {}
       
       // Add click handlers to example tags
       panel.querySelectorAll('.example-tag').forEach(tag => {
@@ -456,7 +551,12 @@
       currentFilters.priceMax = priceMax.value ? parseInt(priceMax.value) : null;
       currentFilters.calorieMin = calorieMin.value ? parseInt(calorieMin.value) : null;
       currentFilters.calorieMax = calorieMax.value ? parseInt(calorieMax.value) : null;
+      currentFilters.allergensExclude = (allergensExcludeInput.value || '')
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
       currentFilters.sort = sortSelect.value;
+      try { localStorage.setItem(STORAGE_KEYS.searchFilters, JSON.stringify(currentFilters)); } catch {}
       
       // Filter dishes
       filteredDishes = allDishes.filter(dish => {
@@ -481,6 +581,13 @@
             if (currentFilters.calorieMin !== null && calories < currentFilters.calorieMin) return false;
             if (currentFilters.calorieMax !== null && calories > currentFilters.calorieMax) return false;
           }
+        }
+
+        // Allergens exclude filter
+        if (currentFilters.allergensExclude && currentFilters.allergensExclude.length > 0) {
+          const dishAll = Array.isArray(dish.allergens) ? dish.allergens.map(a => String(a).toLowerCase()) : [];
+          const hasExcluded = currentFilters.allergensExclude.some(ex => dishAll.includes(ex));
+          if (hasExcluded) return false;
         }
         
         return true;
@@ -547,11 +654,22 @@
       const resultsGrid = document.createElement('div');
       resultsGrid.className = 'filtered-results-grid';
       
+      const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const highlight = (text, query) => {
+        const q = (query || '').trim();
+        if (!q) return text;
+        try {
+          const re = new RegExp(escapeRegExp(q), 'ig');
+          return String(text).replace(re, (m) => `<mark>${m}</mark>`);
+        } catch { return text; }
+      };
+
+      const currentQuery = (searchInput.value || '').trim();
       filteredDishes.slice(0, 50).forEach(dish => {
         const card = document.createElement('div');
         card.className = 'dish-result-card';
         card.innerHTML = `
-          <div class="dish-result-name">${dish.name}</div>
+          <div class="dish-result-name">${highlight(dish.name, currentQuery)}</div>
           <div class="dish-result-category">${dish.category || '—'}</div>
           <div class="dish-result-footer">
             <span class="dish-result-price">${dish.price || '—'}</span>
@@ -592,6 +710,9 @@
         const calText = `Калории: ${currentFilters.calorieMin || 0} — ${currentFilters.calorieMax || '∞'} ккал`;
         filters.push(calText);
       }
+      if (currentFilters.allergensExclude && currentFilters.allergensExclude.length > 0) {
+        filters.push(`Без аллергенов: ${currentFilters.allergensExclude.join(', ')}`);
+      }
       if (currentFilters.sort !== 'relevance') {
         const sortNames = {
           'name': 'По названию',
@@ -620,6 +741,7 @@
         priceMax: null,
         calorieMin: null,
         calorieMax: null,
+        allergensExclude: [],
         sort: 'relevance'
       };
       
@@ -628,7 +750,9 @@
       priceMax.value = '';
       calorieMin.value = '';
       calorieMax.value = '';
+      allergensExcludeInput.value = '';
       sortSelect.value = 'relevance';
+      try { localStorage.removeItem(STORAGE_KEYS.searchFilters); } catch {}
       
       filteredDishes = [...allDishes];
       activeFiltersContainer.style.display = 'none';
@@ -885,16 +1009,102 @@
       <div class="panel-header">
         <h2>Изучение меню</h2>
       </div>
-      <div style="padding: 20px; text-align: center; color: var(--muted);">
-        <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
-        <h3>Изучение меню</h3>
-        <p>Здесь будет удобное изучение меню с карточками, тестами и запоминанием блюд</p>
-        <p style="margin-top: 16px; font-size: 14px; color: var(--divider);">
-          Функция в разработке
-        </p>
+      <div class="learn-controls" style="display:flex; gap:8px; padding:12px;">
+        <select id="learn-source" class="filter-select">
+          <option value="all">Все блюда</option>
+          <option value="kitchen">Кухня</option>
+          <option value="bar">Бар</option>
+        </select>
+        <button id="learn-start" class="btn primary">Старт</button>
+        <div id="learn-stats" style="margin-left:auto; color:var(--muted);">—</div>
+      </div>
+      <div id="learn-card" class="learn-card" style="padding:16px; text-align:center; display:none;">
+        <div class="learn-name" style="font-size:20px; font-weight:600;"></div>
+        <div class="learn-category" style="color:var(--muted); margin-top:4px;"></div>
+        <div class="learn-hidden" style="display:none; margin-top:12px; text-align:left;">
+          <div class="learn-comp"></div>
+          <div class="learn-all"></div>
+          <div class="learn-kcal"></div>
+          <div class="learn-rk"></div>
+        </div>
+        <div class="learn-actions" style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+          <button id="learn-reveal" class="btn secondary">Показать</button>
+          <button id="learn-know" class="btn success" disabled>Знаю</button>
+          <button id="learn-dont" class="btn danger" disabled>Не знаю</button>
+          <button id="learn-next" class="btn" disabled>Далее</button>
+        </div>
       </div>
     `;
     wrapper.appendChild(panel);
+
+    let pool = [];
+    let idx = 0;
+    let progress = { correct: 0, wrong: 0 };
+    try { progress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learnProgress) || '{"correct":0,"wrong":0}'); } catch {}
+    const statsEl = panel.querySelector('#learn-stats');
+    const cardEl = panel.querySelector('#learn-card');
+    const nameEl = panel.querySelector('.learn-name');
+    const catEl = panel.querySelector('.learn-category');
+    const hiddenEl = panel.querySelector('.learn-hidden');
+    const compEl = panel.querySelector('.learn-comp');
+    const allEl = panel.querySelector('.learn-all');
+    const kcalEl = panel.querySelector('.learn-kcal');
+    const rkEl = panel.querySelector('.learn-rk');
+    const revealBtn = panel.querySelector('#learn-reveal');
+    const knowBtn = panel.querySelector('#learn-know');
+    const dontBtn = panel.querySelector('#learn-dont');
+    const nextBtn = panel.querySelector('#learn-next');
+    const sourceSel = panel.querySelector('#learn-source');
+    const startBtn = panel.querySelector('#learn-start');
+
+    const updateStats = () => {
+      statsEl.textContent = `Верно: ${progress.correct} · Ошибки: ${progress.wrong}`;
+      try { localStorage.setItem(STORAGE_KEYS.learnProgress, JSON.stringify(progress)); } catch {}
+    };
+    updateStats();
+
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+    function loadPool() {
+      return loadDb().then(({dishes}) => {
+        let items = dishes;
+        if (sourceSel.value === 'kitchen') items = dishes.filter(d => d.source !== 'bar');
+        if (sourceSel.value === 'bar') items = dishes.filter(d => d.source === 'bar');
+        pool = shuffle(items.slice());
+        idx = 0;
+      });
+    }
+
+    function renderCard() {
+      if (!pool.length || idx >= pool.length) {
+        cardEl.style.display = '';
+        nameEl.textContent = 'Готово!';
+        catEl.textContent = 'Карточки закончились — нажмите Старт';
+        hiddenEl.style.display = 'none';
+        revealBtn.disabled = true; knowBtn.disabled = true; dontBtn.disabled = true; nextBtn.disabled = true;
+        return;
+      }
+      const d = pool[idx];
+      cardEl.style.display = '';
+      nameEl.textContent = d.name;
+      catEl.textContent = d.category || '';
+      compEl.textContent = d.composition && d.composition.length ? `Состав: ${d.composition.join(', ')}` : '';
+      allEl.textContent = d.allergens && d.allergens.length ? `Аллергены: ${d.allergens.join(', ')}` : '';
+      const kcal = d.kbju && /К[.:\s]*(\d+)/i.test(d.kbju) ? parseInt(d.kbju.match(/К[.:\s]*(\d+)/i)[1]) : null;
+      kcalEl.textContent = kcal ? `Калории: ${kcal}` : '';
+      rkEl.textContent = d.R_keeper ? `R_keeper: ${d.R_keeper}` : '';
+      hiddenEl.style.display = 'none';
+      revealBtn.disabled = false; knowBtn.disabled = true; dontBtn.disabled = true; nextBtn.disabled = true;
+    }
+
+    revealBtn.addEventListener('click', () => {
+      hiddenEl.style.display = '';
+      knowBtn.disabled = false; dontBtn.disabled = false; nextBtn.disabled = false; revealBtn.disabled = true;
+    });
+    knowBtn.addEventListener('click', () => { progress.correct++; updateStats(); });
+    dontBtn.addEventListener('click', () => { progress.wrong++; updateStats(); });
+    nextBtn.addEventListener('click', () => { idx++; renderCard(); });
+    startBtn.addEventListener('click', () => { loadPool().then(renderCard); });
     
     return wrapper;
   }
@@ -923,7 +1133,10 @@
     activeTables.forEach(n => {
       const card = document.createElement('div');
       card.className = 'table-card';
-      const totalItems = tableOrders[n] ? tableOrders[n].reduce((sum, o) => sum + o.quantity, 0) : 0;
+      const itemsArr = Array.isArray(tableOrders[n]) ? tableOrders[n] : [];
+      const totalItems = itemsArr.reduce((sum, o) => sum + (o.quantity || 0), 0);
+      const createdAt = itemsArr.length ? new Date(Math.min(...itemsArr.map(i => i.addedAt || Date.now()))) : null;
+      const updatedAt = itemsArr.length ? new Date(Math.max(...itemsArr.map(i => i.addedAt || Date.now()))) : null;
       const displayName = getTableDisplayName(n);
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -933,12 +1146,38 @@
             <button class="table-rename-btn" title="Переименовать стол">✏️</button>
           </div>
         </div>
-        <div class="table-meta"><span class="pill">Заказов: ${totalItems}</span></div>
+        <div class="table-meta">
+          <span class="pill">Заказов: ${totalItems}</span>
+          ${createdAt ? `<span class=\"pill\">Открыт: ${createdAt.toLocaleDateString('ru-RU')} ${createdAt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</span>` : ''}
+          ${updatedAt ? `<span class=\"pill\">Обновлён: ${updatedAt.toLocaleDateString('ru-RU')} ${updatedAt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</span>` : ''}
+        </div>
       `;
       const actions = document.createElement('div');
       actions.className = 'table-actions';
       const openBtn = document.createElement('button'); openBtn.className = 'btn primary'; openBtn.textContent = 'Открыть';
       openBtn.addEventListener('click', () => navigate(`#/table/${n}`));
+      const editNumBtn = document.createElement('button'); editNumBtn.className = 'btn secondary'; editNumBtn.textContent = 'Редактировать номер';
+      editNumBtn.addEventListener('click', () => {
+        const newNumStr = prompt('Новый номер стола?', String(n));
+        if (!newNumStr) return;
+        const newNum = Number(newNumStr);
+        if (!Number.isInteger(newNum) || newNum <= 0) { alert('Введите корректный номер'); return; }
+        if (activeTables.includes(newNum) && newNum !== n) { alert('Стол с таким номером уже существует'); return; }
+        if (newNum === n) return;
+        // Move orders and name
+        const ordersCopy = tableOrders[n] ? [...tableOrders[n]] : [];
+        tableOrders[newNum] = ordersCopy;
+        delete tableOrders[n];
+        if (tableNames[n]) { tableNames[newNum] = tableNames[n]; delete tableNames[n]; }
+        // Update active tables
+        activeTables = activeTables.filter(t => t !== n);
+        activeTables.push(newNum);
+        activeTables.sort((a,b)=>a-b);
+        saveTableOrders();
+        saveTableNames();
+        saveTables();
+        render();
+      });
       const removeBtn = document.createElement('button'); removeBtn.className = 'btn danger'; removeBtn.textContent = 'Убрать';
       removeBtn.addEventListener('click', () => {
         const hasOrders = tableOrders[n] && tableOrders[n].length > 0;
@@ -975,7 +1214,30 @@
           'Очистить стол',
           `Вы уверены, что хотите очистить все заказы из ${displayName}? Всего заказов: ${tableOrders[n].length}`,
           () => {
-            // Clear all orders from table but keep the table
+            // Move current table orders to history, then clear table
+            try {
+              const items = Array.isArray(tableOrders[n]) ? tableOrders[n] : [];
+              const total = items.reduce((sum, o) => sum + (Number(o.price || o.Price || 0) * (o.quantity || 1)), 0);
+              const snapshot = {
+                table: n,
+                tableName: getTableDisplayName(n),
+                items: items.map(i => ({
+                  id: i.id,
+                  itemName: i.itemName || i.name || i.Name || '',
+                  quantity: i.quantity || 1,
+                  price: Number(i.price || i.Price || 0),
+                  rkeeper: i.rkeeper || i.R_keeper || i.R_keeaper || '—'
+                })),
+                total,
+                createdAt: items.length ? Math.min(...items.map(i => i.addedAt || Date.now())) : Date.now(),
+                updatedAt: Date.now(),
+                closedAt: Date.now(),
+                status: 'closed'
+              };
+              orderHistory.push(snapshot);
+              saveOrderHistory();
+            } catch {}
+
             tableOrders[n] = [];
             saveTableOrders();
             render();
@@ -991,7 +1253,7 @@
         showRenameTableModal(n);
       });
       
-      actions.appendChild(openBtn); actions.appendChild(removeBtn);
+      actions.appendChild(openBtn); actions.appendChild(editNumBtn); actions.appendChild(removeBtn);
       card.appendChild(actions); frag.appendChild(card);
     });
     grid.appendChild(frag);
@@ -1335,7 +1597,13 @@
         if (tableOrders[tableNumber]) {
           const order = tableOrders[tableNumber].find(o => o.id === orderId);
           if (order) {
-            order.quantity = Math.max(1, order.quantity + delta);
+            const nextQty = (order.quantity || 1) + delta;
+            if (nextQty <= 0) {
+              // remove item if decremented from 1
+              tableOrders[tableNumber] = tableOrders[tableNumber].filter(o => o.id !== orderId);
+            } else {
+              order.quantity = nextQty;
+            }
             saveTableOrders();
             renderTableOrders();
             // Update counter - count total items, not unique dishes
@@ -1418,6 +1686,7 @@
           const img = document.createElement('img'); 
           img.alt = d.name; 
           img.src = 'icons/icon-192.png';
+          img.loading = 'lazy';
           img.className = 'dish-image';
           
           const headerContent = document.createElement('div');
@@ -1700,7 +1969,71 @@
     await deferredPrompt.prompt(); await deferredPrompt.userChoice; installBtn.hidden = true; installBtn.disabled = false; deferredPrompt = null;
   });
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+    const showUpdateBanner = (onReload) => {
+      let banner = document.getElementById('sw-update-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'sw-update-banner';
+        banner.style.position = 'fixed';
+        banner.style.left = '12px';
+        banner.style.right = '12px';
+        banner.style.bottom = '16px';
+        banner.style.zIndex = '9999';
+        banner.style.background = 'var(--card-bg, #0f172a)';
+        banner.style.color = '#fff';
+        banner.style.borderRadius = '12px';
+        banner.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)';
+        banner.style.padding = '12px 12px';
+        banner.style.display = 'flex';
+        banner.style.gap = '8px';
+        banner.style.alignItems = 'center';
+        banner.style.justifyContent = 'space-between';
+        banner.innerHTML = `
+          <span>Доступно обновление приложения</span>
+          <div style="display:flex; gap:8px;">
+            <button id="sw-update-reload" class="btn primary">Обновить</button>
+            <button id="sw-update-dismiss" class="btn secondary">Позже</button>
+          </div>
+        `;
+        document.body.appendChild(banner);
+        banner.querySelector('#sw-update-dismiss').addEventListener('click', () => {
+          banner.remove();
+        });
+      }
+      const reloadBtn = banner.querySelector('#sw-update-reload');
+      reloadBtn.onclick = () => onReload && onReload();
+    };
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then((registration) => {
+        // When a new SW is found
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // New update available
+                showUpdateBanner(() => {
+                  // Ask SW to activate immediately, then reload
+                  if (registration.waiting) {
+                    registration.waiting.postMessage('SKIP_WAITING');
+                  }
+                });
+              }
+            }
+          });
+        });
+
+        // Ensure page refreshes to use new SW after it takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+      }).catch(() => {});
+    });
   }
 
   // Navigation handlers
@@ -2543,6 +2876,10 @@
         <div class="settings-item">
           <button id="export-data-btn" class="btn secondary">Экспорт данных</button>
         </div>
+        <div class="settings-item">
+          <button id="import-data-btn" class="btn secondary">Импорт данных</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none;" />
+        </div>
         
         <div class="settings-item">
           <button id="reset-app-btn" class="btn danger">Сбросить приложение</button>
@@ -2556,9 +2893,53 @@
           <div class="settings-item-value">Система управления заказами</div>
         </div>
       </div>
+
+      <div class="settings-section">
+        <h3>История заказов</h3>
+        <div class="settings-item">
+          <input id="history-search" class="filter-input" placeholder="Поиск по названию стола или блюду" />
+        </div>
+        <div id="history-list" class="history-list"></div>
+      </div>
     `;
 
     wrapper.appendChild(panel);
+    // Render order history
+    const historySearch = wrapper.querySelector('#history-search');
+    const historyList = wrapper.querySelector('#history-list');
+    function renderHistory(filter = '') {
+      const norm = (filter || '').toLowerCase().trim();
+      const items = (orderHistory || []).slice().sort((a,b) => (b.closedAt||0) - (a.closedAt||0));
+      const filtered = items.filter(h => {
+        if (!norm) return true;
+        const t = `${h.tableName || ''} ${h.table}`.toLowerCase();
+        const hasDish = (h.items || []).some(i => (i.itemName || '').toLowerCase().includes(norm));
+        return t.includes(norm) || hasDish;
+      });
+      const subset = filtered.slice(0, 20);
+      historyList.innerHTML = subset.length ? '' : '<div style="color: var(--muted);">Пока нет записей</div>';
+      subset.forEach(h => {
+        const row = document.createElement('div');
+        row.className = 'history-row';
+        const dt = h.closedAt || h.updatedAt || h.createdAt || Date.now();
+        const d = new Date(dt);
+        row.innerHTML = `
+          <div class="history-row-main">
+            <div class="history-title">${h.tableName || ('Стол ' + h.table)}</div>
+            <div class="history-meta">${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
+            <div class="history-total">${h.total || 0} ₽</div>
+          </div>
+          <div class="history-items" style="display:none;">${(h.items||[]).map(i => `${i.itemName} ×${i.quantity}`).join(', ') || '—'}</div>
+        `;
+        row.addEventListener('click', () => {
+          const el = row.querySelector('.history-items');
+          el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        });
+        historyList.appendChild(row);
+      });
+    }
+    renderHistory('');
+    historySearch.addEventListener('input', (e) => renderHistory(e.target.value));
 
     // Event handlers
     wrapper.querySelector('#clear-cache-btn').addEventListener('click', () => {
@@ -2575,9 +2956,11 @@
       const data = {
         tables: activeTables,
         orders: tableOrders,
+        orderHistory,
+        profile,
+        meta,
         exportDate: new Date().toISOString()
       };
-      
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2585,6 +2968,52 @@
       a.download = `bullteam-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+
+    const importBtn = wrapper.querySelector('#import-data-btn');
+    const importFile = wrapper.querySelector('#import-file');
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async () => {
+      const file = importFile.files && importFile.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (Array.isArray(data.tables)) {
+          const set = new Set(activeTables);
+          data.tables.forEach(n => set.add(n));
+          activeTables = Array.from(set).sort((a,b)=>a-b);
+          saveTables();
+        }
+        if (data.orders && typeof data.orders === 'object') {
+          tableOrders = { ...tableOrders, ...data.orders };
+          saveTableOrders();
+        }
+        if (Array.isArray(data.orderHistory)) {
+          const existing = new Set(orderHistory.map(h => `${h.table}-${h.closedAt}-${h.total}`));
+          const merged = [...orderHistory];
+          for (const h of data.orderHistory) {
+            const key = `${h.table}-${h.closedAt}-${h.total}`;
+            if (!existing.has(key)) merged.push(h);
+          }
+          orderHistory = merged.sort((a,b) => (a.closedAt||0) - (b.closedAt||0));
+          saveOrderHistory();
+        }
+        if (data.profile && typeof data.profile === 'object') {
+          profile = { ...profile, ...data.profile };
+          saveProfile();
+        }
+        if (data.meta && typeof data.meta === 'object') {
+          meta = { ...meta, ...data.meta };
+          saveMeta();
+        }
+        alert('Импорт завершён');
+        render();
+      } catch (e) {
+        alert('Ошибка импорта: ' + e.message);
+      } finally {
+        importFile.value = '';
+      }
     });
     
     wrapper.querySelector('#reset-app-btn').addEventListener('click', () => {
@@ -2606,79 +3035,40 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'profile-content';
     
+    const metrics = computeMonthlyMetrics(new Date());
+    const p = {
+      name: profile.name || 'Имя',
+      role: profile.role || 'официант',
+      grade: profile.grade || '—',
+      location: profile.location || '—'
+    };
+
     wrapper.innerHTML = `
       <div class="profile-header">
         <div class="profile-avatar">👤</div>
-        <div class="profile-name">Официант</div>
-        <div class="profile-role">Сотрудник ресторана</div>
+        <div class="profile-name">${p.name}</div>
+        <div class="profile-role">${p.role}</div>
       </div>
-      
-      <div class="settings-section">
-        <div class="settings-title">Настройки</div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Уведомления</div>
-          <div class="settings-toggle active" id="notifications-toggle"></div>
-        </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Звуковые сигналы</div>
-          <div class="settings-toggle active" id="sounds-toggle"></div>
-        </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Темная тема</div>
-          <div class="settings-toggle active" id="theme-toggle"></div>
+
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="panel-header"><h2>Профиль</h2></div>
+        <div class="settings-item"><div class="settings-item-label">Имя</div><input id="pf-name" value="${p.name}" /></div>
+        <div class="settings-item"><div class="settings-item-label">Роль</div><input id="pf-role" value="${p.role}" /></div>
+        <div class="settings-item"><div class="settings-item-label">Грейд</div><input id="pf-grade" value="${p.grade}" /></div>
+        <div class="settings-item"><div class="settings-item-label">Локация</div><input id="pf-location" value="${p.location}" placeholder="Напр.: Бык Дмитровка" /></div>
+        <div style="padding:12px; display:flex; gap:8px; justify-content:flex-end;">
+          <button id="pf-save" class="btn primary">Сохранить</button>
         </div>
       </div>
-      
-      <div class="settings-section mode-settings-section">
-        <div class="settings-title">Режим работы со столами</div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Режим поиска</div>
-          <div class="settings-toggle active" id="search-mode-toggle"></div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Метрики месяца</h2></div>
+        <div class="settings-item"><div class="settings-item-label">Кол-во столов</div><div class="settings-item-value">${metrics.numTables}</div></div>
+        <div class="settings-item"><div class="settings-item-label">Выручка</div><div class="settings-item-value">${metrics.revenue} ₽</div></div>
+        <div class="settings-item"><div class="settings-item-label">Средний чек (1 стол)</div><div class="settings-item-value">${metrics.averageCheck} ₽</div></div>
+        <div class="settings-item"><div class="settings-item-label">Топ‑3 блюда</div>
+          <div class="settings-item-value">${metrics.top3.map(t => `${t.name} ×${t.qty}`).join(', ') || '—'}</div>
         </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">To-do режим</div>
-          <div class="settings-toggle" id="todo-mode-toggle"></div>
-        </div>
-      </div>
-      
-      <div class="settings-section">
-        <div class="settings-title">Информация</div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Версия приложения</div>
-          <div class="settings-item-value">${getAppVersion()}</div>
-        </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Всего столов</div>
-          <div class="settings-item-value">${activeTables.length}</div>
-        </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Всего заказов</div>
-          <div class="settings-item-value">${Object.values(tableOrders).reduce((sum, orders) => sum + orders.length, 0)}</div>
-        </div>
-      </div>
-      
-      <div class="settings-section">
-        <div class="settings-title">Действия</div>
-        
-        <button class="btn secondary" id="clear-cache-btn" style="width: 100%; margin-bottom: 12px;">
-          Очистить кэш
-        </button>
-        
-        <button class="btn secondary" id="export-data-btn" style="width: 100%; margin-bottom: 12px;">
-          Экспорт данных
-        </button>
-        
-        <button class="btn danger" id="reset-app-btn" style="width: 100%;">
-          Сбросить приложение
-        </button>
       </div>
     `;
     
@@ -2711,42 +3101,14 @@
     //   saveTableMode();
     // });
     
-    // Action handlers
-    wrapper.querySelector('#clear-cache-btn').addEventListener('click', () => {
-      showConfirmModal(
-        'Очистить кэш',
-        'Это действие очистит все кэшированные данные и перезагрузит приложение. Продолжить?',
-        () => {
-          window.clearCache();
-        }
-      );
-    });
-    
-    wrapper.querySelector('#export-data-btn').addEventListener('click', () => {
-      const data = {
-        tables: activeTables,
-        orders: tableOrders,
-        exportDate: new Date().toISOString()
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `waiter-data-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-    
-    wrapper.querySelector('#reset-app-btn').addEventListener('click', () => {
-      showConfirmModal(
-        'Сбросить приложение',
-        'Это действие удалит ВСЕ данные: столы, заказы, настройки. Действие необратимо! Продолжить?',
-        () => {
-          localStorage.clear();
-          location.reload();
-        }
-      );
+    // Save profile
+    wrapper.querySelector('#pf-save').addEventListener('click', () => {
+      profile.name = (wrapper.querySelector('#pf-name').value || '').trim();
+      profile.role = (wrapper.querySelector('#pf-role').value || '').trim();
+      profile.grade = (wrapper.querySelector('#pf-grade').value || '').trim();
+      profile.location = (wrapper.querySelector('#pf-location').value || '').trim();
+      saveProfile();
+      render();
     });
     
     return wrapper;
@@ -2765,6 +3127,7 @@
 
   // init
   loadState();
+  ensureMonthlyPurge(31);
   updateNavItems();
   render();
 })();
