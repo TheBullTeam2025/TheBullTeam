@@ -676,16 +676,38 @@ body {
 }
 
 /* Profile inputs visual tuning */
+.profile-content .panel {
+  padding: 16px;
+}
+
+.profile-content .panel .panel-header {
+  padding: 16px 20px;
+}
+
+.profile-content .panel .settings-item {
+  padding: 12px 20px;
+}
+
+.profile-content .panel .settings-item-label {
+  padding-left: 4px;
+  margin-right: 12px;
+}
+
 .profile-content .panel input {
-  width: 100%;
+  flex: 1;
   background: #0b1220;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 10px 16px;
   -webkit-user-select: text; user-select: text;
+  margin-left: auto;
 }
-.profile-content .panel #pf-save { margin-top: 8px; }
+
+.profile-content .panel #pf-save { 
+  margin-top: 8px; 
+  margin-right: 20px;
+}
 
 .profile-header {
   text-align: center;
@@ -766,7 +788,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--divider);
 }
 
