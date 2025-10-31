@@ -1,4 +1,4 @@
-const VERSION = 'v0.5.0';
+const VERSION = 'v0.5.1';
 const PRECACHE = `thebullteam-precache-${VERSION}`;
 const RUNTIME = `thebullteam-runtime-${VERSION}`;
 
@@ -12,8 +12,9 @@ const ASSETS = [
   './search-filters.css',
   './dishes.json',
   './manifest.webmanifest',
-  './icons/The Bull-128.png',
-  './icons/The Bull-512.png'
+  './The Bull-128.png',
+  './The Bull-512.png',
+  './TableBull.png'
 ];
 
 self.addEventListener('install', (event) => {
