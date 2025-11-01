@@ -1,6 +1,6 @@
 {
   "name": "bullteam-pwa",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "PWA приложение для официантов",
   "main": "server.js",
   "scripts": {

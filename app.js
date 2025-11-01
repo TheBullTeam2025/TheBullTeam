@@ -11,7 +11,10 @@
     profile: 'waiter.profile',
     searchFilters: 'waiter.searchFilters',
     learnProgress: 'waiter.learnProgress',
-    categoryGrouping: 'waiter.categoryGrouping'
+    categoryGrouping: 'waiter.categoryGrouping',
+    learningProgress: 'waiter.learningProgress',
+    learningLevel: 'waiter.learningLevel',
+    learningXP: 'waiter.learningXP'
   };
 
 
@@ -44,6 +47,11 @@
     dessert: true
   };
   
+  // Learning system state
+  let learningProgress = {}; // { sectionId: { topicId: boolean, flashcardId: { attempts, correct }, testId: { attempts, correct } } }
+  let learningLevel = 1;
+  let learningXP = 0;
+  
   /** @type {'search' | 'todo'} */
   let tableMode = 'todo';
 
@@ -68,6 +76,11 @@
       }
     } catch { /* ignore */ }
     normalizeCategoryGrouping();
+    
+    // Load learning system data
+    try { learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}'); } catch { learningProgress = {}; }
+    try { learningLevel = parseInt(localStorage.getItem(STORAGE_KEYS.learningLevel) || '1') || 1; } catch { learningLevel = 1; }
+    try { learningXP = parseInt(localStorage.getItem(STORAGE_KEYS.learningXP) || '0') || 0; } catch { learningXP = 0; }
   }
   function saveTableOrders() { localStorage.setItem(STORAGE_KEYS.tableOrders, JSON.stringify(tableOrders)); }
   function saveTables() { localStorage.setItem(STORAGE_KEYS.tables, JSON.stringify(activeTables)); }
@@ -77,6 +90,9 @@
   function saveMeta() { localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta)); }
   function saveProfile() { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)); }
   function saveCategoryGrouping() { localStorage.setItem(STORAGE_KEYS.categoryGrouping, JSON.stringify(categoryGrouping)); }
+  function saveLearningProgress() { localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress)); }
+  function saveLearningLevel() { localStorage.setItem(STORAGE_KEYS.learningLevel, learningLevel.toString()); }
+  function saveLearningXP() { localStorage.setItem(STORAGE_KEYS.learningXP, learningXP.toString()); }
 
   function normalizeCategoryGrouping() {
     Object.keys(CATEGORY_KEYS).forEach((key) => {
@@ -84,6 +100,50 @@
         categoryGrouping[key] = true;
       }
     });
+  }
+  
+  // Learning system helpers
+  function calculateOverallProgress() {
+    if (!window.TRAINING_DATA) return 0;
+    let total = 0;
+    let completed = 0;
+    
+    window.TRAINING_DATA.sections.forEach(section => {
+      section.topics.forEach(topic => {
+        total++;
+        if (learningProgress[section.id]?.[topic.id]) completed++;
+      });
+    });
+    
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  }
+  
+  function addXP(amount) {
+    learningXP += amount;
+    
+    // Level up system: level 1-10, each level requires more XP
+    const xpForNextLevel = learningLevel * 100;
+    if (learningXP >= xpForNextLevel && learningLevel < 10) {
+      learningLevel++;
+      learningXP = learningXP - xpForNextLevel;
+      saveLearningLevel();
+    }
+    
+    saveLearningXP();
+    return { leveledUp: learningXP >= xpForNextLevel, newLevel: learningLevel };
+  }
+  
+  function getLevelInfo() {
+    const xpForNext = learningLevel * 100;
+    const progress = learningLevel >= 10 ? 100 : Math.round((learningXP / xpForNext) * 100);
+    const titles = ['', 'Стажёр', 'Новичок', 'Практикант', 'Официант', 'Профессионал', 'Эксперт', 'Мастер', 'Гуру', 'Легенда', 'Супер-звезда'];
+    return {
+      level: learningLevel,
+      xp: learningXP,
+      xpForNext,
+      progress,
+      title: titles[learningLevel] || 'Официант'
+    };
   }
 
   // Purge history monthly to avoid storage bloat
@@ -363,8 +423,6 @@
       order._sortGroup = groupEnabled ? baseGroup : 1000;
       order._statusRank = order.status === 'served' ? 2 : (order.status === 'rkeeper' ? 1 : 0);
     });
-    
-    console.log('Сортировка стола', tableNum, '| Включены курсы:', categoryGrouping);
     
     // Sort by sort group, then by status (only for enabled categories), then by addedAt
     tableOrders[tableNum].sort((a, b) => {
@@ -1084,6 +1142,125 @@
   }
 
   function viewLearn() {
+    const hash = location.hash || '';
+    
+    // Route to sub-pages
+    if (hash === '#/learn/menu') return viewLearnMenu();
+    if (hash === '#/learn/theory') return viewLearnTheory();
+    if (hash === '#/learn/steps') return viewServiceSteps();
+    if (hash.startsWith('#/learn/reference/')) return viewReference();
+    if (hash.startsWith('#/learn/flashcards/')) return viewFlashcards();
+    if (hash.startsWith('#/learn/tests/')) return viewTests();
+    
+    // Main learning page
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    const levelInfo = getLevelInfo();
+    const overallProgress = calculateOverallProgress();
+    
+    wrapper.innerHTML = `
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <h2>Обучение</h2>
+        </div>
+        
+        <div class="learn-level-card">
+          <div class="level-badge">
+            <div class="level-number">Ур. ${levelInfo.level}</div>
+            <div class="level-title">${levelInfo.title}</div>
+          </div>
+          <div class="level-progress-bar">
+            <div class="level-progress-fill" style="width: ${levelInfo.progress}%"></div>
+          </div>
+          <div class="level-xp-text">${levelInfo.xp} / ${levelInfo.xpForNext} XP</div>
+        </div>
+        
+        <div class="learn-stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${overallProgress}%</div>
+            <div class="stat-label">Общий прогресс</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${learningLevel}</div>
+            <div class="stat-label">Уровень</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header"><h3>Изучение меню</h3></div>
+        <div class="learn-mode-buttons">
+          <button class="learn-mode-btn" data-mode="menu">
+            <span class="mode-icon">🍽️</span>
+            <span class="mode-title">Учить меню</span>
+            <span class="mode-desc">Флешкарты: 115 блюд + 110 напитков</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header"><h3>Подготовка к 2 грейду</h3></div>
+        <div class="learn-mode-buttons">
+          <button class="learn-mode-btn" data-mode="theory">
+            <span class="mode-icon">📚</span>
+            <span class="mode-title">Теория</span>
+            <span class="mode-desc">Мясо, Бар, Компетенции</span>
+          </button>
+          <button class="learn-mode-btn" data-mode="steps">
+            <span class="mode-icon">👔</span>
+            <span class="mode-title">6 шагов сервиса</span>
+            <span class="mode-desc">Приветствие → Прощание</span>
+          </button>
+        </div>
+        
+        <div class="grade2-checklist">
+          <h4 style="padding:0 16px 12px; color:var(--muted); font-size:14px;">Требования для получения:</h4>
+          ${(window.TRAINING_DATA?.grade2Requirements || []).map(req => {
+            const isCompleted = learningProgress.grade2?.[req.id] || false;
+            return `
+              <label class="grade2-item">
+                <input type="checkbox" ${isCompleted ? 'checked' : ''} data-req-id="${req.id}" class="grade2-checkbox" />
+                <span class="grade2-text">${req.title}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    // Event listeners
+    wrapper.querySelectorAll('[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === 'menu') navigate('#/learn/menu');
+        if (mode === 'theory') navigate('#/learn/theory');
+        if (mode === 'steps') navigate('#/learn/steps');
+      });
+    });
+    
+    // Grade 2 checklist handlers
+    wrapper.querySelectorAll('.grade2-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const reqId = e.target.dataset.reqId;
+        if (!learningProgress.grade2) learningProgress.grade2 = {};
+        learningProgress.grade2[reqId] = e.target.checked;
+        saveLearningProgress();
+        
+        if (e.target.checked) {
+          const result = addXP(25);
+          if (result.leveledUp) {
+            alert(`Поздравляю! Вы достигли уровня ${result.newLevel}!`);
+          }
+        }
+      });
+    });
+    
+    return wrapper;
+  }
+  
+  // Original menu flashcards (kept for backward compatibility)
+  function viewLearnMenu() {
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
     
@@ -1091,7 +1268,8 @@
     panel.className = 'panel';
     panel.innerHTML = `
       <div class="panel-header">
-        <h2>Изучение меню</h2>
+        <div class="page-title"><h2>Учить меню</h2></div>
+        <button id="btn-back-learn" class="btn">Назад</button>
       </div>
       <div class="learn-controls" style="display:flex; gap:8px; padding:12px;">
         <select id="learn-source" class="filter-select">
@@ -1189,6 +1367,478 @@
     dontBtn.addEventListener('click', () => { progress.wrong++; updateStats(); });
     nextBtn.addEventListener('click', () => { idx++; renderCard(); });
     startBtn.addEventListener('click', () => { loadPool().then(renderCard); });
+    
+    panel.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
+    
+    return wrapper;
+  }
+
+  function viewLearnTheory() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    wrapper.innerHTML = `
+      <div class="panel">
+        <div class="panel-header">
+          <div class="page-title"><h2>Теория для 2 грейда</h2></div>
+          <button id="btn-back-learn" class="btn">Назад</button>
+        </div>
+        
+        <div class="learn-theory-modes">
+          <button class="theory-mode-card" data-section="meat" data-mode="reference">
+            <div class="theory-icon">🥩</div>
+            <div class="theory-title">Мясо</div>
+            <div class="theory-actions">
+              <button class="btn secondary small">Справочник</button>
+              <button class="btn secondary small">Флешкарты</button>
+              <button class="btn secondary small">Тесты</button>
+            </div>
+          </button>
+          
+          <button class="theory-mode-card" data-section="bar" data-mode="reference">
+            <div class="theory-icon">🍸</div>
+            <div class="theory-title">Барное меню</div>
+            <div class="theory-actions">
+              <button class="btn secondary small">Справочник</button>
+              <button class="btn secondary small">Флешкарты</button>
+              <button class="btn secondary small">Тесты</button>
+            </div>
+          </button>
+          
+          <button class="theory-mode-card" data-section="competencies" data-mode="reference">
+            <div class="theory-icon">⭐</div>
+            <div class="theory-title">Компетенции</div>
+            <div class="theory-actions">
+              <button class="btn secondary small">Справочник</button>
+              <button class="btn secondary small">Флешкарты</button>
+              <button class="btn secondary small">Тесты</button>
+            </div>
+          </button>
+        </div>
+      </div>
+    `;
+    
+    wrapper.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
+    
+    wrapper.querySelectorAll('.theory-mode-card').forEach(card => {
+      const section = card.dataset.section;
+      const buttons = card.querySelectorAll('.theory-actions button');
+      
+      buttons[0]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/reference/${section}`); });
+      buttons[1]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/flashcards/${section}`); });
+      buttons[2]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/tests/${section}`); });
+    });
+    
+    return wrapper;
+  }
+  
+  function viewServiceSteps() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    if (!window.TRAINING_DATA) {
+      wrapper.innerHTML = '<div class="panel"><div class="panel-header"><h2>Ошибка</h2></div><p style="padding:16px;">Данные не загружены</p></div>';
+      return wrapper;
+    }
+    
+    const steps = window.TRAINING_DATA.serviceSteps || [];
+    
+    wrapper.innerHTML = `
+      <div class="panel">
+        <div class="panel-header">
+          <div class="page-title"><h2>6 шагов сервиса</h2></div>
+          <button id="btn-back-learn" class="btn">Назад</button>
+        </div>
+        
+        <div class="service-steps-list">
+          ${steps.map(step => `
+            <div class="service-step-card">
+              <h3>${step.title}</h3>
+              <p>${step.content}</p>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div style="padding:16px;">
+          <button id="start-steps-flashcards" class="btn primary" style="width:100%;">Тренировать флешкартами</button>
+        </div>
+      </div>
+    `;
+    
+    wrapper.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
+    wrapper.querySelector('#start-steps-flashcards')?.addEventListener('click', () => navigate('#/learn/flashcards/steps'));
+    
+    return wrapper;
+  }
+  
+  function viewReference() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    const sectionId = location.hash.split('/').pop();
+    if (!window.TRAINING_DATA) {
+      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+      return wrapper;
+    }
+    
+    const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
+    if (!section) {
+      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Раздел не найден</p></div>';
+      return wrapper;
+    }
+    
+    wrapper.innerHTML = `
+      <div class="panel">
+        <div class="panel-header">
+          <div class="page-title"><h2>${section.title}</h2></div>
+          <button id="btn-back-theory" class="btn">Назад</button>
+        </div>
+        
+        <div class="reference-search" style="padding:12px;">
+          <input id="reference-search-input" class="filter-input" placeholder="Поиск по темам..." />
+        </div>
+        
+        <div class="reference-topics" id="reference-topics">
+          ${section.topics.map((topic, idx) => {
+            const isRead = learningProgress[section.id]?.[topic.id] || false;
+            return `
+              <div class="reference-topic" data-topic-id="${topic.id}">
+                <div class="topic-header">
+                  <h3>${topic.title}</h3>
+                  <label class="topic-checkbox">
+                    <input type="checkbox" ${isRead ? 'checked' : ''} data-section="${section.id}" data-topic="${topic.id}" />
+                    <span>Изучено</span>
+                  </label>
+                </div>
+                <div class="topic-content">${topic.content}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    
+    wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
+    
+    // Search functionality
+    const searchInput = wrapper.querySelector('#reference-search-input');
+    searchInput?.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      wrapper.querySelectorAll('.reference-topic').forEach(topic => {
+        const text = topic.textContent.toLowerCase();
+        topic.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+    
+    // Checkbox handlers
+    wrapper.querySelectorAll('.topic-checkbox input').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const sectionId = e.target.dataset.section;
+        const topicId = e.target.dataset.topic;
+        if (!learningProgress[sectionId]) learningProgress[sectionId] = {};
+        learningProgress[sectionId][topicId] = e.target.checked;
+        saveLearningProgress();
+        
+        if (e.target.checked) {
+          const result = addXP(15);
+          if (result.leveledUp) {
+            alert(`Поздравляю! Вы достигли уровня ${result.newLevel}!`);
+          }
+        }
+      });
+    });
+    
+    return wrapper;
+  }
+  
+  function viewFlashcards() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    const sectionId = location.hash.split('/').pop();
+    if (!window.TRAINING_DATA) {
+      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+      return wrapper;
+    }
+    
+    let flashcards = [];
+    let sectionTitle = '';
+    
+    if (sectionId === 'steps') {
+      sectionTitle = '6 шагов сервиса';
+      flashcards = (window.TRAINING_DATA.serviceSteps || []).map(s => s.flashcard).filter(Boolean);
+    } else {
+      const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
+      if (!section) {
+        wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Раздел не найден</p></div>';
+        return wrapper;
+      }
+      sectionTitle = section.title;
+      flashcards = section.flashcards || [];
+    }
+    
+    let currentIndex = 0;
+    let userAnswer = '';
+    let isAnswered = false;
+    let stats = { correct: 0, wrong: 0 };
+    
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+    flashcards = shuffle([...flashcards]);
+    
+    wrapper.innerHTML = `
+      <div class="panel">
+        <div class="panel-header">
+          <div class="page-title"><h2>${sectionTitle}</h2></div>
+          <button id="btn-back-theory" class="btn">Назад</button>
+        </div>
+        
+        <div class="flashcard-progress" style="padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="card-counter">Карточка 1 / ${flashcards.length}</span>
+            <span id="card-stats">✅ 0 | ❌ 0</span>
+          </div>
+        </div>
+        
+        <div class="flashcard-container" id="flashcard-container">
+          <div class="flashcard-question" id="question-text"></div>
+          <div class="flashcard-input-area" id="input-area">
+            <textarea id="user-answer" placeholder="Введите ваш ответ..." rows="3"></textarea>
+            <button id="check-answer-btn" class="btn primary">Проверить</button>
+          </div>
+          <div class="flashcard-result" id="result-area" style="display:none;">
+            <div class="result-message" id="result-message"></div>
+            <div class="correct-answer" id="correct-answer"></div>
+            <div class="flashcard-actions">
+              <button id="next-card-btn" class="btn primary">Следующая карточка</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    const questionEl = wrapper.querySelector('#question-text');
+    const answerInput = wrapper.querySelector('#user-answer');
+    const inputArea = wrapper.querySelector('#input-area');
+    const resultArea = wrapper.querySelector('#result-area');
+    const resultMessage = wrapper.querySelector('#result-message');
+    const correctAnswerEl = wrapper.querySelector('#correct-answer');
+    const checkBtn = wrapper.querySelector('#check-answer-btn');
+    const nextBtn = wrapper.querySelector('#next-card-btn');
+    const counterEl = wrapper.querySelector('#card-counter');
+    const statsEl = wrapper.querySelector('#card-stats');
+    
+    function renderCard() {
+      if (currentIndex >= flashcards.length) {
+        wrapper.querySelector('#flashcard-container').innerHTML = `
+          <div style="text-align:center; padding:40px;">
+            <h2>🎉 Готово!</h2>
+            <p>Правильных ответов: ${stats.correct} из ${flashcards.length}</p>
+            <p>Процент: ${Math.round((stats.correct / flashcards.length) * 100)}%</p>
+            <button id="restart-btn" class="btn primary">Начать заново</button>
+          </div>
+        `;
+        wrapper.querySelector('#restart-btn')?.addEventListener('click', () => {
+          currentIndex = 0;
+          stats = { correct: 0, wrong: 0 };
+          flashcards = shuffle([...flashcards]);
+          renderCard();
+        });
+        return;
+      }
+      
+      const card = flashcards[currentIndex];
+      questionEl.textContent = card.question;
+      answerInput.value = '';
+      inputArea.style.display = '';
+      resultArea.style.display = 'none';
+      isAnswered = false;
+      
+      counterEl.textContent = `Карточка ${currentIndex + 1} / ${flashcards.length}`;
+      statsEl.textContent = `✅ ${stats.correct} | ❌ ${stats.wrong}`;
+    }
+    
+    function checkAnswer() {
+      if (isAnswered) return;
+      isAnswered = true;
+      
+      const card = flashcards[currentIndex];
+      userAnswer = answerInput.value.trim();
+      const normalizedUser = userAnswer.toLowerCase().replace(/\s+/g, ' ');
+      const normalizedCorrect = card.answer.toLowerCase().replace(/\s+/g, ' ');
+      
+      let isCorrect = false;
+      
+      // Check if contains key words
+      if (card.keywords && card.keywords.length) {
+        const foundKeywords = card.keywords.filter(kw => normalizedUser.includes(kw.toLowerCase()));
+        isCorrect = foundKeywords.length >= Math.min(2, card.keywords.length);
+      } else {
+        // Exact or partial match
+        isCorrect = normalizedUser === normalizedCorrect || normalizedUser.includes(normalizedCorrect) || normalizedCorrect.includes(normalizedUser);
+      }
+      
+      if (isCorrect) {
+        stats.correct++;
+        resultMessage.innerHTML = '<div style="color:#22c55e; font-size:20px; font-weight:600;">✅ Правильно!</div>';
+        addXP(10);
+      } else {
+        stats.wrong++;
+        resultMessage.innerHTML = '<div style="color:#ef4444; font-size:20px; font-weight:600;">❌ Неправильно</div>';
+      }
+      
+      correctAnswerEl.innerHTML = `<p><strong>Правильный ответ:</strong></p><p>${card.answer}</p>`;
+      if (userAnswer) {
+        correctAnswerEl.innerHTML += `<p><strong>Ваш ответ:</strong> ${userAnswer}</p>`;
+      }
+      
+      inputArea.style.display = 'none';
+      resultArea.style.display = '';
+      statsEl.textContent = `✅ ${stats.correct} | ❌ ${stats.wrong}`;
+    }
+    
+    checkBtn.addEventListener('click', checkAnswer);
+    answerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        e.preventDefault();
+        checkAnswer();
+      }
+    });
+    
+    nextBtn.addEventListener('click', () => {
+      currentIndex++;
+      renderCard();
+    });
+    
+    wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
+    
+    renderCard();
+    return wrapper;
+  }
+  
+  function viewTests() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+    
+    const sectionId = location.hash.split('/').pop();
+    if (!window.TRAINING_DATA) {
+      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+      return wrapper;
+    }
+    
+    const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
+    if (!section || !section.tests) {
+      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Тесты не найдены</p></div>';
+      return wrapper;
+    }
+    
+    let currentIndex = 0;
+    let selectedAnswer = null;
+    let stats = { correct: 0, wrong: 0 };
+    const tests = shuffle([...section.tests]);
+    
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+    
+    wrapper.innerHTML = `
+      <div class="panel">
+        <div class="panel-header">
+          <div class="page-title"><h2>Тесты: ${section.title}</h2></div>
+          <button id="btn-back-theory" class="btn">Назад</button>
+        </div>
+        
+        <div class="flashcard-progress" style="padding:12px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span id="test-counter">Вопрос 1 / ${tests.length}</span>
+            <span id="test-stats">✅ 0 | ❌ 0</span>
+          </div>
+        </div>
+        
+        <div class="test-container" id="test-container"></div>
+      </div>
+    `;
+    
+    const container = wrapper.querySelector('#test-container');
+    const counterEl = wrapper.querySelector('#test-counter');
+    const statsEl = wrapper.querySelector('#test-stats');
+    
+    function renderTest() {
+      if (currentIndex >= tests.length) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px;">
+            <h2>🎉 Тест завершён!</h2>
+            <p style="font-size:24px; margin:20px 0;">Результат: ${stats.correct} / ${tests.length}</p>
+            <p style="font-size:18px;">Процент: ${Math.round((stats.correct / tests.length) * 100)}%</p>
+            <button id="restart-test-btn" class="btn primary" style="margin-top:20px;">Пройти заново</button>
+          </div>
+        `;
+        container.querySelector('#restart-test-btn')?.addEventListener('click', () => {
+          currentIndex = 0;
+          stats = { correct: 0, wrong: 0 };
+          renderTest();
+        });
+        return;
+      }
+      
+      const test = tests[currentIndex];
+      selectedAnswer = null;
+      
+      container.innerHTML = `
+        <div class="test-question-card">
+          <h3>${test.question}</h3>
+          <div class="test-options" id="test-options">
+            ${test.options.map((opt, idx) => `
+              <button class="test-option" data-index="${idx}">
+                <span class="option-letter">${String.fromCharCode(65 + idx)}</span>
+                <span class="option-text">${opt}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="test-actions">
+            <button id="submit-test-btn" class="btn primary" disabled>Ответить</button>
+          </div>
+          <div id="test-result" class="test-result" style="display:none;"></div>
+        </div>
+      `;
+      
+      counterEl.textContent = `Вопрос ${currentIndex + 1} / ${tests.length}`;
+      statsEl.textContent = `✅ ${stats.correct} | ❌ ${stats.wrong}`;
+      
+      const submitBtn = container.querySelector('#submit-test-btn');
+      const resultDiv = container.querySelector('#test-result');
+      
+      container.querySelectorAll('.test-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.test-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedAnswer = parseInt(btn.dataset.index);
+          submitBtn.disabled = false;
+        });
+      });
+      
+      submitBtn.addEventListener('click', () => {
+        if (selectedAnswer === null) return;
+        
+        const isCorrect = selectedAnswer === test.correct;
+        if (isCorrect) {
+          stats.correct++;
+          addXP(20);
+          resultDiv.innerHTML = '<div style="color:#22c55e; font-size:18px; padding:16px;">✅ Правильно!</div>';
+        } else {
+          stats.wrong++;
+          const correctOpt = test.options[test.correct];
+          resultDiv.innerHTML = `<div style="color:#ef4444; font-size:18px; padding:16px;">❌ Неправильно<br>Правильный ответ: ${correctOpt}</div>`;
+        }
+        
+        resultDiv.style.display = '';
+        submitBtn.textContent = 'Следующий вопрос';
+        submitBtn.onclick = () => { currentIndex++; renderTest(); };
+        container.querySelectorAll('.test-option').forEach(btn => btn.disabled = true);
+        
+        statsEl.textContent = `✅ ${stats.correct} | ❌ ${stats.wrong}`;
+      });
+    }
+    
+    wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
+    renderTest();
     
     return wrapper;
   }
@@ -1376,16 +2026,7 @@
     
     // Sort button handler - sorts dishes by category
     panelMenu.querySelector('#btn-sort').addEventListener('click', () => {
-      console.log('До сортировки:', tableOrders[tableNumber].map(o => `${o.itemName} (группа: ${o._sortGroup || '?'})`));
       sortTableOrdersByCategory(tableNumber);
-      console.log('После сортировки:', tableOrders[tableNumber].map(o => `${o.itemName} (группа: ${o._sortGroup})`));
-      
-      // Show grouping info
-      const enabled = Object.entries(categoryGrouping).filter(([k,v]) => v).map(([k]) => {
-        return {drinks: 'Напитки', cold: 'Холодные', hot: 'Горячие', dessert: 'Десерты'}[k];
-      });
-      alert(`Пересортировка выполнена!\n\nВключены курсы:\n${enabled.length ? enabled.join(', ') : 'Нет (все отключены)'}`);
-      
       renderTableOrders();
       
       // Update counter
@@ -1417,7 +2058,6 @@
 
       // Function to render table orders with details
       function renderTableOrders() {
-        console.log('🔄 РЕНДЕРИНГ СТОЛА', tableNumber, '| Состояние курсов:', JSON.stringify(categoryGrouping));
         sortTableOrdersByCategory(tableNumber);
         list.innerHTML = '';
         if (!tableOrders[tableNumber] || tableOrders[tableNumber].length === 0) {
@@ -1429,20 +2069,15 @@
         
         // Group orders by category
         let lastCategoryGroup = null;
-        let separatorCount = 0;
         
         tableOrders[tableNumber].forEach((order, index) => {
           const currentGroup = order._categoryGroup ?? getCategoryGroup(order);
           const categoryConfig = CATEGORY_CONFIG[currentGroup];
           // Always check current state, not cached _categoryEnabled
           const groupingEnabled = currentGroup && isCategoryGroupEnabled(currentGroup);
-          
-          console.log(`  📦 ${index + 1}. ${order.itemName} | Группа:${currentGroup} | Enabled:${groupingEnabled} | Key:${categoryConfig?.key}`);
 
           if (groupingEnabled && currentGroup) {
             if (currentGroup !== lastCategoryGroup) {
-              separatorCount++;
-              console.log(`  ✅ Добавляю разделитель #${separatorCount}: "${categoryConfig?.label}"`);
               const separator = document.createElement('div');
               separator.className = 'category-separator';
               separator.innerHTML = `
@@ -1454,7 +2089,6 @@
               lastCategoryGroup = currentGroup;
             }
           } else {
-            console.log(`  ❌ Разделитель НЕ нужен (курс отключен)`);
             // Reset last group when we hit disabled categories
             if (lastCategoryGroup !== null && lastCategoryGroup < 1000) {
               lastCategoryGroup = null;
@@ -1464,7 +2098,6 @@
           frag.appendChild(createOrderElement(order));
         });
         
-        console.log(`✨ Рендеринг завершён: ${tableOrders[tableNumber].length} блюд, ${separatorCount} разделителей`);
         list.appendChild(frag);
         
       }
@@ -3124,7 +3757,6 @@
         categoryGrouping[key] = nextValue;
         toggle.classList.toggle('active', nextValue);
         saveCategoryGrouping();
-        console.log('Переключатель', key, '→', nextValue, '| Состояние:', categoryGrouping);
         reapplyCategoryGroupingToAllTables();
         // Don't re-render settings page to avoid losing event listeners
         // The visual state is already updated via classList.toggle above

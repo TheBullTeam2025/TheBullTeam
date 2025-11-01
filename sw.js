@@ -1,4 +1,4 @@
-const VERSION = 'v0.5.8';
+const VERSION = 'v0.6.0';
 const PRECACHE = `thebullteam-precache-${VERSION}`;
 const RUNTIME = `thebullteam-runtime-${VERSION}`;
 
@@ -9,6 +9,7 @@ const ASSETS = [
   './app.js',
   './dishes-data.js',
   './bar_drinks.js',
+  './training-data.js',
   './search-filters.css',
   './dishes.json',
   './manifest.webmanifest',
