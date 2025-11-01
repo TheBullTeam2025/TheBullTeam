@@ -10,7 +10,8 @@
     activePage: 'waiter.activePage',
     profile: 'waiter.profile',
     searchFilters: 'waiter.searchFilters',
-    learnProgress: 'waiter.learnProgress'
+    learnProgress: 'waiter.learnProgress',
+    categoryGrouping: 'waiter.categoryGrouping'
   };
 
 
@@ -28,6 +29,20 @@
   let profile = {};
   /** @type {{dishes:any[]} | null} */
   let db = null;
+  const CATEGORY_CONFIG = {
+    1: { key: 'drinks', label: 'Напитки' },
+    2: { key: 'cold', label: 'Холодные блюда и закуски' },
+    3: { key: 'hot', label: 'Горячие блюда' },
+    4: { key: 'dessert', label: 'Десерты' }
+  };
+  const CATEGORY_KEYS = Object.fromEntries(Object.entries(CATEGORY_CONFIG).map(([id, cfg]) => [cfg.key, Number(id)]));
+  /** @type {{drinks:boolean,cold:boolean,hot:boolean,dessert:boolean}} */
+  let categoryGrouping = {
+    drinks: true,
+    cold: true,
+    hot: true,
+    dessert: true
+  };
   
   /** @type {'search' | 'todo'} */
   let tableMode = 'todo';
@@ -46,6 +61,13 @@
     try { meta = JSON.parse(localStorage.getItem(STORAGE_KEYS.meta) || '{}'); } catch { meta = {}; }
     try { currentPage = localStorage.getItem(STORAGE_KEYS.activePage) || 'tables'; } catch { currentPage = 'tables'; }
     try { profile = JSON.parse(localStorage.getItem(STORAGE_KEYS.profile) || '{}'); } catch { profile = {}; }
+    try {
+      const storedGrouping = JSON.parse(localStorage.getItem(STORAGE_KEYS.categoryGrouping) || 'null');
+      if (storedGrouping && typeof storedGrouping === 'object') {
+        categoryGrouping = { ...categoryGrouping, ...storedGrouping };
+      }
+    } catch { /* ignore */ }
+    normalizeCategoryGrouping();
   }
   function saveTableOrders() { localStorage.setItem(STORAGE_KEYS.tableOrders, JSON.stringify(tableOrders)); }
   function saveTables() { localStorage.setItem(STORAGE_KEYS.tables, JSON.stringify(activeTables)); }
@@ -54,6 +76,15 @@
   function saveOrderHistory() { localStorage.setItem(STORAGE_KEYS.orderHistory, JSON.stringify(orderHistory)); }
   function saveMeta() { localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta)); }
   function saveProfile() { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)); }
+  function saveCategoryGrouping() { localStorage.setItem(STORAGE_KEYS.categoryGrouping, JSON.stringify(categoryGrouping)); }
+
+  function normalizeCategoryGrouping() {
+    Object.keys(CATEGORY_KEYS).forEach((key) => {
+      if (typeof categoryGrouping[key] !== 'boolean') {
+        categoryGrouping[key] = true;
+      }
+    });
+  }
 
   // Purge history monthly to avoid storage bloat
   function ensureMonthlyPurge(daysToKeep = 31) {
@@ -284,7 +315,7 @@
     const dessertKeywords = [
       'десерт', 'торт', 'пирог', 'мороженое', 'сорбет', 'чизкейк', 'тирамису', 
       'панна котта', 'крем', 'суфле', 'мусс', 'штрудель', 'печенье', 'круассан',
-      'пирожное', 'эклер', 'макарун', 'брауни', 'кекс', 'маффин'
+      'пирожное', 'эклер', 'макарун', 'брауни', 'кекс', 'маффин', 'фондан', 'медовик'
     ];
     
     if (dessertKeywords.some(keyword => itemName.includes(keyword) || category.includes(keyword))) {
@@ -300,13 +331,20 @@
     const m = String(text || '').match(/(\d+)/);
     return m ? parseInt(m[1], 10) : 0;
   }
-  function computeTableTotalAmount(tableNum) {
-    const items = Array.isArray(tableOrders[tableNum]) ? tableOrders[tableNum] : [];
-    return items.reduce((sum, o) => {
+  function computeItemsTotal(items) {
+    return (Array.isArray(items) ? items : []).reduce((sum, o) => {
       const unit = parsePriceToNumber(o.calculatedPrice) || parsePriceToNumber(o.price);
       const qty = o.quantity || 1;
       return sum + unit * qty;
     }, 0);
+  }
+  function computeTableTotalAmount(tableNum) {
+    return computeItemsTotal(tableOrders[tableNum]);
+  }
+  function isCategoryGroupEnabled(groupId) {
+    const cfg = CATEGORY_CONFIG[groupId];
+    if (!cfg) return true;
+    return categoryGrouping[cfg.key] !== false;
   }
   
   // Function to sort table orders by category
@@ -317,18 +355,48 @@
     
     // Add category group to each order for sorting
     tableOrders[tableNum].forEach(order => {
-      order._categoryGroup = getCategoryGroup(order);
+      const baseGroup = getCategoryGroup(order);
+      const groupEnabled = isCategoryGroupEnabled(baseGroup);
+      order._categoryGroup = baseGroup;
+      order._categoryEnabled = groupEnabled;
+      // If category is enabled, use baseGroup (1-4); if disabled, use 1000 (goes to bottom, preserves add order)
+      order._sortGroup = groupEnabled ? baseGroup : 1000;
+      order._statusRank = order.status === 'served' ? 2 : (order.status === 'rkeeper' ? 1 : 0);
     });
     
-    // Sort by category group, then by addedAt (newest first within each group)
+    // Sort by sort group, then by status (only for enabled categories), then by addedAt
     tableOrders[tableNum].sort((a, b) => {
-      if (a._categoryGroup !== b._categoryGroup) {
-        return a._categoryGroup - b._categoryGroup;
+      const aSortGroup = a._sortGroup || 0;
+      const bSortGroup = b._sortGroup || 0;
+      
+      // First, sort by group (enabled categories first, disabled last)
+      if (aSortGroup !== bSortGroup) {
+        return aSortGroup - bSortGroup;
       }
-      return (b.addedAt || 0) - (a.addedAt || 0);
+      
+      // For enabled categories (sortGroup < 1000), sort by status and time
+      if (aSortGroup < 1000) {
+        if ((a._statusRank || 0) !== (b._statusRank || 0)) {
+          return (a._statusRank || 0) - (b._statusRank || 0);
+        }
+        // Enabled: newest first
+        return (b.addedAt || 0) - (a.addedAt || 0);
+      }
+      
+      // For disabled categories (sortGroup >= 1000), preserve natural order (oldest first)
+      return (a.addedAt || 0) - (b.addedAt || 0);
     });
     
     saveTableOrders();
+  }
+
+  function reapplyCategoryGroupingToAllTables() {
+    Object.keys(tableOrders || {}).forEach(key => {
+      const tableNum = Number(key);
+      if (!Number.isNaN(tableNum)) {
+        sortTableOrdersByCategory(tableNum);
+      }
+    });
   }
 
   // Router
@@ -1208,7 +1276,7 @@
             // Move current table orders to history, then clear table
             try {
               const items = Array.isArray(tableOrders[n]) ? tableOrders[n] : [];
-              const total = items.reduce((sum, o) => sum + (Number(o.price || o.Price || 0) * (o.quantity || 1)), 0);
+              const total = computeItemsTotal(items);
               const snapshot = {
                 table: n,
                 tableName: getTableDisplayName(n),
@@ -1216,7 +1284,8 @@
                   id: i.id,
                   itemName: i.itemName || i.name || i.Name || '',
                   quantity: i.quantity || 1,
-                  price: Number(i.price || i.Price || 0),
+                  price: parsePriceToNumber(i.calculatedPrice) || parsePriceToNumber(i.price),
+                  priceLabel: i.calculatedPrice || i.price || '',
                   rkeeper: i.rkeeper || i.R_keeper || i.R_keeaper || '—'
                 })),
                 total,
@@ -1337,6 +1406,7 @@
 
       // Function to render table orders with details
       function renderTableOrders() {
+        sortTableOrdersByCategory(tableNumber);
         list.innerHTML = '';
         if (!tableOrders[tableNumber] || tableOrders[tableNumber].length === 0) {
           list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted);">Заказов пока нет. Начните поиск блюд выше</div>';
@@ -1346,40 +1416,27 @@
         const frag = document.createDocumentFragment();
         
         // Group orders by category
-        let lastCategoryGroup = -1;
-        const categoryNames = {
-          1: 'Напитки',
-          2: 'Холодные блюда и закуски',
-          3: 'Горячие блюда',
-          4: 'Десерты'
-        };
+        let lastCategoryGroup = null;
         
         tableOrders[tableNumber].forEach((order, index) => {
-          const currentGroup = getCategoryGroup(order);
-          
-          // Add separator between different category groups
-          if (index > 0 && currentGroup !== lastCategoryGroup) {
-            const separator = document.createElement('div');
-            separator.className = 'category-separator';
-            separator.innerHTML = `
-              <div class="separator-line"></div>
-              <div class="separator-text">${categoryNames[currentGroup] || 'Другое'}</div>
-              <div class="separator-line"></div>
-            `;
-            frag.appendChild(separator);
-          } else if (index === 0 && tableOrders[tableNumber].length > 1) {
-            // Add first category label
-            const separator = document.createElement('div');
-            separator.className = 'category-separator';
-            separator.innerHTML = `
-              <div class="separator-line"></div>
-              <div class="separator-text">${categoryNames[currentGroup] || 'Другое'}</div>
-              <div class="separator-line"></div>
-            `;
-            frag.appendChild(separator);
+          const currentGroup = order._categoryGroup ?? getCategoryGroup(order);
+          const categoryConfig = CATEGORY_CONFIG[currentGroup];
+          const groupingEnabled = currentGroup && (order._categoryEnabled ?? isCategoryGroupEnabled(currentGroup));
+
+          if (groupingEnabled && currentGroup) {
+            if (currentGroup !== lastCategoryGroup) {
+              const separator = document.createElement('div');
+              separator.className = 'category-separator';
+              separator.innerHTML = `
+                <div class="separator-line"></div>
+                <div class="separator-text">${categoryConfig?.label || 'Категория'}</div>
+                <div class="separator-line"></div>
+              `;
+              frag.appendChild(separator);
+              lastCategoryGroup = currentGroup;
+            }
           }
           
-          lastCategoryGroup = currentGroup;
           frag.appendChild(createOrderElement(order));
         });
         
@@ -1632,8 +1689,8 @@
               // Set new status
               order.status = status;
             }
-            saveTableOrders();
-            renderTableOrders();
+            sortTableOrdersByCategory(tableNumber);
+            renderTableOrders();Вс
           }
         }
       };
@@ -2878,6 +2935,26 @@
       </div>
 
       <div class="settings-section">
+        <h3>Группировка блюд</h3>
+        <div class="settings-item">
+          <div class="settings-item-label">Напитки</div>
+          <div class="settings-toggle ${categoryGrouping.drinks ? 'active' : ''}" data-category-toggle="drinks"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Холодные блюда</div>
+          <div class="settings-toggle ${categoryGrouping.cold ? 'active' : ''}" data-category-toggle="cold"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Горячие блюда</div>
+          <div class="settings-toggle ${categoryGrouping.hot ? 'active' : ''}" data-category-toggle="hot"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Десерты</div>
+          <div class="settings-toggle ${categoryGrouping.dessert ? 'active' : ''}" data-category-toggle="dessert"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <h3>Информация</h3>
         <div class="settings-item">
           <div class="settings-item-label">BullTeam PWA</div>
@@ -3007,7 +3084,7 @@
         importFile.value = '';
       }
     });
-    
+
     wrapper.querySelector('#reset-app-btn').addEventListener('click', () => {
       showConfirmModal(
         'Сбросить приложение',
@@ -3017,6 +3094,20 @@
           location.reload();
         }
       );
+    });
+
+    wrapper.querySelectorAll('[data-category-toggle]').forEach(toggle => {
+      const key = toggle.dataset.categoryToggle;
+      toggle.addEventListener('click', () => {
+        const currentValue = categoryGrouping[key] !== false;
+        const nextValue = !currentValue;
+        categoryGrouping[key] = nextValue;
+        toggle.classList.toggle('active', nextValue);
+        saveCategoryGrouping();
+        reapplyCategoryGroupingToAllTables();
+        // Don't re-render settings page to avoid losing event listeners
+        // The visual state is already updated via classList.toggle above
+      });
     });
     
     return wrapper;
@@ -3071,13 +3162,6 @@
         </div>
       </div>
     `;
-    
-    // Toggle handlers
-    wrapper.querySelectorAll('.settings-toggle').forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        toggle.classList.toggle('active');
-      });
-    });
     
     // Special handlers for table mode toggles - DISABLED
     // const searchModeToggle = wrapper.querySelector('#search-mode-toggle');
@@ -3158,6 +3242,7 @@
 
   // init
   loadState();
+  reapplyCategoryGroupingToAllTables();
   ensureMonthlyPurge(31);
   updateNavItems();
   render();
