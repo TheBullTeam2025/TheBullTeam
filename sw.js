@@ -1,4 +1,4 @@
-const VERSION = 'v0.5.2';
+const VERSION = 'v0.5.8';
 const PRECACHE = `thebullteam-precache-${VERSION}`;
 const RUNTIME = `thebullteam-runtime-${VERSION}`;
 

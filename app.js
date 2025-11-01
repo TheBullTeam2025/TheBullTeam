@@ -364,6 +364,8 @@
       order._statusRank = order.status === 'served' ? 2 : (order.status === 'rkeeper' ? 1 : 0);
     });
     
+    console.log('Сортировка стола', tableNum, '| Включены курсы:', categoryGrouping);
+    
     // Sort by sort group, then by status (only for enabled categories), then by addedAt
     tableOrders[tableNum].sort((a, b) => {
       const aSortGroup = a._sortGroup || 0;
@@ -1374,7 +1376,16 @@
     
     // Sort button handler - sorts dishes by category
     panelMenu.querySelector('#btn-sort').addEventListener('click', () => {
+      console.log('До сортировки:', tableOrders[tableNumber].map(o => `${o.itemName} (группа: ${o._sortGroup || '?'})`));
       sortTableOrdersByCategory(tableNumber);
+      console.log('После сортировки:', tableOrders[tableNumber].map(o => `${o.itemName} (группа: ${o._sortGroup})`));
+      
+      // Show grouping info
+      const enabled = Object.entries(categoryGrouping).filter(([k,v]) => v).map(([k]) => {
+        return {drinks: 'Напитки', cold: 'Холодные', hot: 'Горячие', dessert: 'Десерты'}[k];
+      });
+      alert(`Пересортировка выполнена!\n\nВключены курсы:\n${enabled.length ? enabled.join(', ') : 'Нет (все отключены)'}`);
+      
       renderTableOrders();
       
       // Update counter
@@ -1406,6 +1417,7 @@
 
       // Function to render table orders with details
       function renderTableOrders() {
+        console.log('🔄 РЕНДЕРИНГ СТОЛА', tableNumber, '| Состояние курсов:', JSON.stringify(categoryGrouping));
         sortTableOrdersByCategory(tableNumber);
         list.innerHTML = '';
         if (!tableOrders[tableNumber] || tableOrders[tableNumber].length === 0) {
@@ -1417,14 +1429,20 @@
         
         // Group orders by category
         let lastCategoryGroup = null;
+        let separatorCount = 0;
         
         tableOrders[tableNumber].forEach((order, index) => {
           const currentGroup = order._categoryGroup ?? getCategoryGroup(order);
           const categoryConfig = CATEGORY_CONFIG[currentGroup];
-          const groupingEnabled = currentGroup && (order._categoryEnabled ?? isCategoryGroupEnabled(currentGroup));
+          // Always check current state, not cached _categoryEnabled
+          const groupingEnabled = currentGroup && isCategoryGroupEnabled(currentGroup);
+          
+          console.log(`  📦 ${index + 1}. ${order.itemName} | Группа:${currentGroup} | Enabled:${groupingEnabled} | Key:${categoryConfig?.key}`);
 
           if (groupingEnabled && currentGroup) {
             if (currentGroup !== lastCategoryGroup) {
+              separatorCount++;
+              console.log(`  ✅ Добавляю разделитель #${separatorCount}: "${categoryConfig?.label}"`);
               const separator = document.createElement('div');
               separator.className = 'category-separator';
               separator.innerHTML = `
@@ -1435,11 +1453,18 @@
               frag.appendChild(separator);
               lastCategoryGroup = currentGroup;
             }
+          } else {
+            console.log(`  ❌ Разделитель НЕ нужен (курс отключен)`);
+            // Reset last group when we hit disabled categories
+            if (lastCategoryGroup !== null && lastCategoryGroup < 1000) {
+              lastCategoryGroup = null;
+            }
           }
           
           frag.appendChild(createOrderElement(order));
         });
         
+        console.log(`✨ Рендеринг завершён: ${tableOrders[tableNumber].length} блюд, ${separatorCount} разделителей`);
         list.appendChild(frag);
         
       }
@@ -2595,40 +2620,32 @@
       const frag = document.createDocumentFragment();
       
       // Group orders by category
-      let lastCategoryGroup = -1;
-      const categoryNames = {
-        1: 'Напитки',
-        2: 'Холодные блюда и закуски',
-        3: 'Горячие блюда',
-        4: 'Десерты'
-      };
+      let lastCategoryGroup = null;
       
       tableOrders[tableNumber].forEach((order, index) => {
-        const currentGroup = getCategoryGroup(order);
+        const currentGroup = order._categoryGroup ?? getCategoryGroup(order);
+        const categoryConfig = CATEGORY_CONFIG[currentGroup];
+        const groupingEnabled = currentGroup && isCategoryGroupEnabled(currentGroup);
         
-        // Add separator between different category groups
-        if (index > 0 && currentGroup !== lastCategoryGroup) {
-          const separator = document.createElement('div');
-          separator.className = 'category-separator';
-          separator.innerHTML = `
-            <div class="separator-line"></div>
-            <div class="separator-text">${categoryNames[currentGroup] || 'Другое'}</div>
-            <div class="separator-line"></div>
-          `;
-          frag.appendChild(separator);
-        } else if (index === 0 && tableOrders[tableNumber].length > 1) {
-          // Add first category label
-          const separator = document.createElement('div');
-          separator.className = 'category-separator';
-          separator.innerHTML = `
-            <div class="separator-line"></div>
-            <div class="separator-text">${categoryNames[currentGroup] || 'Другое'}</div>
-            <div class="separator-line"></div>
-          `;
-          frag.appendChild(separator);
+        // Add separator only for ENABLED category groups
+        if (groupingEnabled && currentGroup) {
+          if (currentGroup !== lastCategoryGroup) {
+            const separator = document.createElement('div');
+            separator.className = 'category-separator';
+            separator.innerHTML = `
+              <div class="separator-line"></div>
+              <div class="separator-text">${categoryConfig?.label || 'Категория'}</div>
+              <div class="separator-line"></div>
+            `;
+            frag.appendChild(separator);
+            lastCategoryGroup = currentGroup;
+          }
+        } else {
+          // Reset when hitting disabled categories
+          if (lastCategoryGroup !== null && lastCategoryGroup < 1000) {
+            lastCategoryGroup = null;
+          }
         }
-        
-        lastCategoryGroup = currentGroup;
         const row = document.createElement('div');
         row.className = 'todo-item';
 
@@ -2952,6 +2969,9 @@
           <div class="settings-item-label">Десерты</div>
           <div class="settings-toggle ${categoryGrouping.dessert ? 'active' : ''}" data-category-toggle="dessert"></div>
         </div>
+        <div class="settings-item">
+          <button id="show-grouping-state-btn" class="btn secondary" style="width:100%;">Показать состояние</button>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -3104,10 +3124,21 @@
         categoryGrouping[key] = nextValue;
         toggle.classList.toggle('active', nextValue);
         saveCategoryGrouping();
+        console.log('Переключатель', key, '→', nextValue, '| Состояние:', categoryGrouping);
         reapplyCategoryGroupingToAllTables();
         // Don't re-render settings page to avoid losing event listeners
         // The visual state is already updated via classList.toggle above
       });
+    });
+    
+    // Show grouping state button
+    wrapper.querySelector('#show-grouping-state-btn')?.addEventListener('click', () => {
+      const state = Object.entries(categoryGrouping).map(([key, val]) => {
+        const label = {drinks: 'Напитки', cold: 'Холодные', hot: 'Горячие', dessert: 'Десерты'}[key];
+        return `${label}: ${val ? '✅ ВКЛ' : '❌ ВЫКЛ'}`;
+      }).join('\n');
+      const stored = localStorage.getItem('waiter.categoryGrouping');
+      alert(`Текущее состояние курсов:\n\n${state}\n\nВ localStorage:\n${stored || 'не сохранено'}`);
     });
     
     return wrapper;
