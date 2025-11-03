@@ -2130,7 +2130,7 @@ body:has(.learn-page) .app-header {
   justify-content: center;
   gap: 8px;
   padding: 8px 20px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #ffffff;
   font-size: 13px;
   font-weight: 500;
@@ -2150,7 +2150,7 @@ body:has(.learn-page) .app-header {
 .learn-modules-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 4px;
   padding: 0 20px 8px;
   flex: 1;
   min-height: 0;

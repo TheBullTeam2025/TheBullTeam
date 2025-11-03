@@ -1568,6 +1568,332 @@
     return wrapper;
   }
 
+  function viewLearnMenuFlashcards() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page learn-flashcards-page';
+    
+    // Get category from URL
+    const hash = location.hash || '';
+    const urlParams = new URLSearchParams(hash.split('?')[1] || '');
+    const categoryName = urlParams.get('cat') || '';
+    const isAllMenu = hash.includes('/flashcards');
+    
+    let dishes = [];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let isDragging = false;
+    
+    wrapper.innerHTML = `
+      <div class="flashcards-header">
+        <button id="btn-back-flashcards" class="back-btn">←</button>
+        <div class="flashcards-progress">
+          <div class="flashcards-progress-bar">
+            <div id="flashcards-progress-fill" class="flashcards-progress-fill"></div>
+          </div>
+        </div>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="flashcards-container">
+        <div id="flashcard" class="flashcard">
+          <div class="flashcard-inner">
+            <div class="flashcard-front">
+              <div class="flashcard-image-wrapper">
+                <div class="flashcard-image-placeholder"></div>
+                <img id="flashcard-image" class="flashcard-image" style="display: none;" />
+              </div>
+              <div class="flashcard-content">
+                <div class="flashcard-name"></div>
+                <div class="flashcard-category-tag"></div>
+              </div>
+              <button id="flip-btn" class="flip-btn">
+                <span class="flip-icon">↻</span>
+                <span>Перевернуть</span>
+              </button>
+            </div>
+            <div class="flashcard-back">
+              <div class="flashcard-back-content">
+                <div class="flashcard-back-title">Состав / Ингредиенты</div>
+                <div id="flashcard-composition" class="flashcard-composition"></div>
+                <div class="flashcard-back-title" style="margin-top: 20px;">Аллергены</div>
+                <div id="flashcard-allergens" class="flashcard-allergens"></div>
+              </div>
+              <button id="flip-back-btn" class="flip-btn">
+                <span class="flip-icon">↻</span>
+                <span>Перевернуть</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flashcards-hint">
+          <span>Свайп вправо → ЗНАЮ</span>
+          <span>Свайп влево ← НЕ ЗНАЮ</span>
+        </div>
+      </div>
+      
+      <div class="flashcards-actions">
+        <button id="know-btn" class="action-btn know-btn">✅ ЗНАЮ</button>
+        <button id="dont-know-btn" class="action-btn dont-know-btn">❌ НЕ ЗНАЮ</button>
+      </div>
+    `;
+    
+    const flashcard = wrapper.querySelector('#flashcard');
+    const flashcardInner = flashcard.querySelector('.flashcard-inner');
+    const flipBtn = wrapper.querySelector('#flip-btn');
+    const flipBackBtn = wrapper.querySelector('#flip-back-btn');
+    const knowBtn = wrapper.querySelector('#know-btn');
+    const dontKnowBtn = wrapper.querySelector('#dont-know-btn');
+    const progressFill = wrapper.querySelector('#flashcards-progress-fill');
+    
+    // Load dishes
+    loadDb().then(({dishes: allDishes}) => {
+      if (isAllMenu) {
+        dishes = allDishes.filter(d => d.source !== 'bar' && (!d.source || d.source === 'kitchen'));
+      } else if (categoryName) {
+        dishes = allDishes.filter(d => 
+          d.source !== 'bar' && 
+          (!d.source || d.source === 'kitchen') &&
+          d.category === decodeURIComponent(categoryName)
+        );
+      }
+      
+      if (dishes.length === 0) {
+        wrapper.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #ffffff;">
+            <p>Блюда не найдены</p>
+            <button id="btn-back-flashcards" class="back-btn" style="margin-top: 20px;">← Назад</button>
+          </div>
+        `;
+        wrapper.querySelector('#btn-back-flashcards')?.addEventListener('click', () => navigate('#/learn/menu'));
+        return;
+      }
+      
+      // Shuffle dishes
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+      dishes = shuffle(dishes);
+      
+      renderCard();
+    });
+    
+    function renderCard() {
+      if (currentIndex >= dishes.length) {
+        wrapper.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #ffffff;">
+            <h2>🎉 Готово!</h2>
+            <p>Вы изучили все блюда (${dishes.length})</p>
+            <button id="btn-back-flashcards" class="back-btn" style="margin-top: 20px;">← Назад</button>
+          </div>
+        `;
+        wrapper.querySelector('#btn-back-flashcards')?.addEventListener('click', () => navigate('#/learn/menu'));
+        return;
+      }
+      
+      const dish = dishes[currentIndex];
+      isFlipped = false;
+      flashcardInner.style.transform = 'rotateY(0deg)';
+      
+      // Update progress
+      const progress = ((currentIndex) / dishes.length) * 100;
+      progressFill.style.width = `${progress}%`;
+      
+      // Front side
+      const nameEl = wrapper.querySelector('.flashcard-name');
+      const categoryTagEl = wrapper.querySelector('.flashcard-category-tag');
+      const imageEl = wrapper.querySelector('#flashcard-image');
+      const placeholderEl = wrapper.querySelector('.flashcard-image-placeholder');
+      
+      nameEl.textContent = dish.name || 'Без названия';
+      categoryTagEl.textContent = dish.category || 'Без категории';
+      
+      if (dish.image && dish.image !== '-' && dish.image !== './images/-.jpg') {
+        imageEl.src = dish.image;
+        imageEl.style.display = 'block';
+        placeholderEl.style.display = 'none';
+        imageEl.onerror = () => {
+          imageEl.style.display = 'none';
+          placeholderEl.style.display = 'flex';
+        };
+      } else {
+        imageEl.style.display = 'none';
+        placeholderEl.style.display = 'flex';
+      }
+      
+      // Back side
+      const compositionEl = wrapper.querySelector('#flashcard-composition');
+      const allergensEl = wrapper.querySelector('#flashcard-allergens');
+      
+      if (dish.composition && Array.isArray(dish.composition) && dish.composition.length && dish.composition[0] !== '-') {
+        compositionEl.textContent = dish.composition.join(', ');
+      } else {
+        compositionEl.textContent = 'Не указано';
+      }
+      
+      if (dish.allergens && Array.isArray(dish.allergens) && dish.allergens.length && dish.allergens[0] !== '-') {
+        allergensEl.textContent = dish.allergens.join(', ');
+      } else {
+        allergensEl.textContent = 'Не указано';
+      }
+    }
+    
+    function flipCard() {
+      isFlipped = !isFlipped;
+      flashcardInner.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+    }
+    
+    function markAsKnown() {
+      const dish = dishes[currentIndex];
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      learningProgress[`menu_${dish.name}`] = { known: true, timestamp: Date.now() };
+      localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress));
+      
+      currentIndex++;
+      renderCard();
+    }
+    
+    function markAsUnknown() {
+      const dish = dishes[currentIndex];
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      learningProgress[`menu_${dish.name}`] = { known: false, timestamp: Date.now() };
+      localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress));
+      
+      currentIndex++;
+      renderCard();
+    }
+    
+    // Touch/swipe handlers
+    flashcard.addEventListener('touchstart', (e) => {
+      if (isFlipped) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      currentX = 0;
+      currentY = 0;
+    });
+    
+    flashcard.addEventListener('touchmove', (e) => {
+      if (!isDragging || isFlipped) return;
+      currentX = e.touches[0].clientX - startX;
+      currentY = e.touches[0].clientY - startY;
+      
+      const rotate = currentX * 0.1;
+      const opacity = 1 - Math.abs(currentX) / 200;
+      
+      flashcard.style.transform = `translateX(${currentX}px) rotateZ(${rotate}deg)`;
+      flashcard.style.opacity = Math.max(0.3, opacity);
+    });
+    
+    flashcard.addEventListener('touchend', (e) => {
+      if (!isDragging || isFlipped) return;
+      isDragging = false;
+      
+      const threshold = 100;
+      if (Math.abs(currentX) > threshold) {
+        if (currentX > 0) {
+          // Swipe right - KNOW
+          flashcard.style.transform = 'translateX(500px) rotateZ(30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsKnown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        } else {
+          // Swipe left - DON'T KNOW
+          flashcard.style.transform = 'translateX(-500px) rotateZ(-30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsUnknown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        }
+      } else {
+        // Return to original position
+        flashcard.style.transform = '';
+        flashcard.style.opacity = '1';
+      }
+    });
+    
+    // Mouse drag handlers (for desktop testing)
+    flashcard.addEventListener('mousedown', (e) => {
+      if (isFlipped) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      isDragging = true;
+      currentX = 0;
+      currentY = 0;
+      flashcard.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging || isFlipped) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      
+      const rotate = currentX * 0.1;
+      const opacity = 1 - Math.abs(currentX) / 200;
+      
+      flashcard.style.transform = `translateX(${currentX}px) rotateZ(${rotate}deg)`;
+      flashcard.style.opacity = Math.max(0.3, opacity);
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (!isDragging || isFlipped) return;
+      isDragging = false;
+      flashcard.style.cursor = '';
+      
+      const threshold = 100;
+      if (Math.abs(currentX) > threshold) {
+        if (currentX > 0) {
+          flashcard.style.transform = 'translateX(500px) rotateZ(30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsKnown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        } else {
+          flashcard.style.transform = 'translateX(-500px) rotateZ(-30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsUnknown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        }
+      } else {
+        flashcard.style.transform = '';
+        flashcard.style.opacity = '1';
+      }
+    });
+    
+    flipBtn.addEventListener('click', flipCard);
+    flipBackBtn.addEventListener('click', flipCard);
+    knowBtn.addEventListener('click', markAsKnown);
+    dontKnowBtn.addEventListener('click', markAsUnknown);
+    
+    wrapper.querySelector('#btn-back-flashcards')?.addEventListener('click', () => navigate('#/learn/menu'));
+    
+    return wrapper;
+  }
+
   function viewLearnTheory() {
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
