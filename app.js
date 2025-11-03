@@ -1343,37 +1343,45 @@
         <div class="learn-module-card" data-module="dishes">
           <div class="module-icon">🍽️</div>
           <div class="module-title">Изучение блюд</div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${dishesProgress}%"></div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar">
+              <div class="module-progress-fill" style="width: ${dishesProgress}%"></div>
+            </div>
+            <div class="module-percent">${dishesProgress}%</div>
           </div>
-          <div class="module-percent">${dishesProgress}%</div>
         </div>
         
         <div class="learn-module-card" data-module="bar-study">
           <div class="module-icon">🍷</div>
           <div class="module-title">Изучение бара</div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${barStudyProgress}%"></div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar">
+              <div class="module-progress-fill" style="width: ${barStudyProgress}%"></div>
+            </div>
+            <div class="module-percent">${barStudyProgress}%</div>
           </div>
-          <div class="module-percent">${barStudyProgress}%</div>
         </div>
         
         <div class="learn-module-card" data-module="theory">
           <div class="module-icon">📖</div>
           <div class="module-title">Теория</div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${theoryModuleProgress}%"></div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar">
+              <div class="module-progress-fill" style="width: ${theoryModuleProgress}%"></div>
+            </div>
+            <div class="module-percent">${theoryModuleProgress}%</div>
           </div>
-          <div class="module-percent">${theoryModuleProgress}%</div>
         </div>
         
         <div class="learn-module-card" data-module="service-steps">
           <div class="module-icon">🤝</div>
           <div class="module-title">6 шагов сервиса</div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${serviceStepsProgress}%"></div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar">
+              <div class="module-progress-fill" style="width: ${serviceStepsProgress}%"></div>
+            </div>
+            <div class="module-percent">${serviceStepsProgress}%</div>
           </div>
-          <div class="module-percent">${serviceStepsProgress}%</div>
         </div>
       </div>
     `;
