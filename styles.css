@@ -2158,59 +2158,47 @@ body:has(.learn-page) .app-header {
 }
 
 .learn-module-card {
-  background: linear-gradient(135deg, #1a1a1a 0%, #151515 100%);
+  background: #1a1a1a;
   border: 1px solid #902229;
   border-radius: 16px;
-  padding: 18px 14px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 6px rgba(144, 34, 41, 0.2), 0 0 0 0 rgba(144, 34, 41, 0);
+  justify-content: center;
+  height: 100px;
+  box-shadow: 0 2px 6px rgba(144, 34, 41, 0.2);
   position: relative;
-  overflow: hidden;
-}
-
-.learn-module-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 16px;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(144, 34, 41, 0.3), rgba(192, 0, 0, 0.1));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
 .learn-module-card:hover {
   border-color: #c00000;
-  background: linear-gradient(135deg, #1f1f1f 0%, #1a1a1a 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(144, 34, 41, 0.3), 0 0 0 1px rgba(192, 0, 0, 0.2);
-}
-
-.learn-module-card:hover::before {
-  opacity: 1;
+  background: #1f1f1f;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(192, 0, 0, 0.3);
 }
 
 .learn-module-card:active {
-  transform: translateY(0);
+  transform: scale(1);
   box-shadow: 0 2px 6px rgba(144, 34, 41, 0.2);
 }
 
+.card-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
 .module-icon {
-  font-size: 44px;
+  font-size: 36px;
   line-height: 1;
-  margin-bottom: 4px;
+  flex-shrink: 0;
+  margin-right: 10px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
@@ -2219,42 +2207,24 @@ body:has(.learn-page) .app-header {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.module-progress-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: auto;
+  flex: 1;
 }
 
 .module-progress-bar {
-  position: relative;
-  flex-shrink: 0;
+  width: 100%;
   height: 4px;
-  background: transparent;
+  background: rgba(42, 42, 42, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
 }
 
 .module-progress-fill {
-  height: 4px;
+  height: 100%;
   background: #c00000;
   border-radius: 2px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  display: block;
   box-shadow: 0 0 4px rgba(192, 0, 0, 0.4);
-}
-
-.module-percent {
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  line-height: 1;
-  flex-shrink: 0;
 }
 
 /* Reference Topics */
