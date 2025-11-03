@@ -1441,185 +1441,128 @@
   // Original menu flashcards (kept for backward compatibility)
   function viewLearnMenu() {
     const wrapper = document.createElement('div');
-    wrapper.className = 'page';
+    wrapper.className = 'page learn-menu-page';
     
-    const panel = document.createElement('section');
-    panel.className = 'panel';
-    panel.innerHTML = `
-      <div class="panel-header">
-        <div class="page-title"><h2>Учить меню</h2></div>
-        <button id="btn-back-learn" class="btn">Назад</button>
+    wrapper.innerHTML = `
+      <div class="learn-menu-header">
+        <button id="btn-back-learn-menu" class="back-btn">←</button>
+        <h1 class="learn-menu-title">Изучение блюд</h1>
+        <div style="width: 40px;"></div>
       </div>
-      <div class="learn-controls" style="display:flex; gap:8px; padding:12px;">
-        <select id="learn-source" class="filter-select">
-          <option value="all">Все блюда</option>
-          <option value="kitchen">Кухня</option>
-          <option value="bar">Бар</option>
-        </select>
-        <button id="learn-start" class="btn primary">Старт</button>
-        <div id="learn-stats" style="margin-left:auto; color:var(--muted);">—</div>
+      <p class="learn-menu-subtitle">Выберите категорию меню для изучения</p>
+      
+      <div class="learn-menu-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="menu-search-input" class="menu-search-input" placeholder="Поиск по меню..." />
       </div>
-      <div id="learn-progress-bar" style="padding:12px; display:none;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span id="learn-counter" style="font-size:14px; color:var(--muted);"></span>
-          <span id="learn-session-stats" style="font-size:14px; color:var(--muted);"></span>
-        </div>
-        <div style="background:var(--bg-secondary); border-radius:8px; height:8px; overflow:hidden;">
-          <div id="learn-progress-fill" style="background:var(--primary); height:100%; transition:width 0.3s; width:0%;"></div>
-        </div>
+      
+      <div id="learn-categories-grid" class="learn-categories-grid">
+        <!-- Categories will be loaded here -->
       </div>
-      <div id="learn-card" class="learn-card" style="padding:16px; text-align:center; display:none;">
-        <div class="learn-name" style="font-size:24px; font-weight:600; margin-bottom:8px;"></div>
-        <div class="learn-category" style="color:var(--muted); font-size:14px; margin-bottom:16px;"></div>
-        <div class="learn-price" style="font-size:18px; font-weight:500; color:var(--primary); margin-bottom:16px;"></div>
-        <div class="learn-hidden" style="display:none; margin-top:16px; text-align:left; background:var(--bg-secondary); padding:16px; border-radius:8px;">
-          <div class="learn-comp" style="margin-bottom:12px;"></div>
-          <div class="learn-all" style="margin-bottom:12px;"></div>
-          <div class="learn-kcal" style="margin-bottom:12px;"></div>
-          <div class="learn-gramm" style="margin-bottom:12px;"></div>
-          <div class="learn-rk" style="margin-bottom:12px;"></div>
-          <div class="learn-description" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-style:italic; color:var(--muted);"></div>
-        </div>
-        <div class="learn-actions" style="display:flex; gap:8px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
-          <button id="learn-reveal" class="btn secondary">Показать детали</button>
-          <button id="learn-know" class="btn success" disabled>✅ Знаю</button>
-          <button id="learn-dont" class="btn danger" disabled>❌ Не знаю</button>
-          <button id="learn-next" class="btn primary" disabled>Следующее →</button>
-        </div>
-      </div>
+      
+      <button id="check-all-menu-btn" class="check-all-menu-btn">Проверить всё меню</button>
+      <a href="#" id="associations-link" class="associations-link">Ассоциации</a>
     `;
-    wrapper.appendChild(panel);
-
-    let pool = [];
-    let idx = 0;
-    let progress = { correct: 0, wrong: 0 };
-    try { progress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learnProgress) || '{"correct":0,"wrong":0}'); } catch {}
-    const statsEl = panel.querySelector('#learn-stats');
-    const cardEl = panel.querySelector('#learn-card');
-    const nameEl = panel.querySelector('.learn-name');
-    const catEl = panel.querySelector('.learn-category');
-    const priceEl = panel.querySelector('.learn-price');
-    const hiddenEl = panel.querySelector('.learn-hidden');
-    const compEl = panel.querySelector('.learn-comp');
-    const allEl = panel.querySelector('.learn-all');
-    const kcalEl = panel.querySelector('.learn-kcal');
-    const grammEl = panel.querySelector('.learn-gramm');
-    const rkEl = panel.querySelector('.learn-rk');
-    const descEl = panel.querySelector('.learn-description');
-    const progressBarEl = panel.querySelector('#learn-progress-bar');
-    const progressFillEl = panel.querySelector('#learn-progress-fill');
-    const counterEl = panel.querySelector('#learn-counter');
-    const sessionStatsEl = panel.querySelector('#learn-session-stats');
-    const revealBtn = panel.querySelector('#learn-reveal');
-    const knowBtn = panel.querySelector('#learn-know');
-    const dontBtn = panel.querySelector('#learn-dont');
-    const nextBtn = panel.querySelector('#learn-next');
-    const sourceSel = panel.querySelector('#learn-source');
-    const startBtn = panel.querySelector('#learn-start');
-
-    const updateStats = () => {
-      statsEl.textContent = `Верно: ${progress.correct} · Ошибки: ${progress.wrong}`;
-      try { localStorage.setItem(STORAGE_KEYS.learnProgress, JSON.stringify(progress)); } catch {}
-    };
-    updateStats();
-
-    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
-
-    function updateProgressBar() {
-      if (pool.length === 0) return;
-      const percent = Math.round(((idx) / pool.length) * 100);
-      progressFillEl.style.width = `${percent}%`;
-      counterEl.textContent = `Блюдо ${idx + 1} из ${pool.length}`;
-      const sessionCorrect = progress.correct - (progress.wrong > 0 ? Math.floor(progress.wrong * 0.5) : 0);
-      sessionStatsEl.textContent = `Сессия: ✅ ${Math.max(0, sessionCorrect)}`;
-    }
-
-    function loadPool() {
-      return loadDb().then(({dishes}) => {
-        let items = dishes;
-        if (sourceSel.value === 'kitchen') {
-          items = dishes.filter(d => d.source !== 'bar' && (!d.source || d.source === 'kitchen'));
-        } else if (sourceSel.value === 'bar') {
-          items = dishes.filter(d => d.source === 'bar');
+    
+    // Load categories and render cards
+    loadDb().then(({dishes}) => {
+      const kitchenDishes = dishes.filter(d => d.source !== 'bar' && (!d.source || d.source === 'kitchen'));
+      
+      // Get unique categories
+      const categoriesMap = new Map();
+      kitchenDishes.forEach(dish => {
+        const category = dish.category || 'Без категории';
+        if (!categoriesMap.has(category)) {
+          categoriesMap.set(category, []);
+        }
+        categoriesMap.get(category).push(dish);
+      });
+      
+      // Get learning progress
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      
+      // Calculate progress for each category
+      const categories = Array.from(categoriesMap.entries()).map(([categoryName, categoryDishes]) => {
+        let studied = 0;
+        categoryDishes.forEach(dish => {
+          if (learningProgress[`menu_${dish.name}`]) studied++;
+        });
+        const progress = categoryDishes.length > 0 ? Math.round((studied / categoryDishes.length) * 100) : 0;
+        
+        // Get first dish with image for category image
+        const dishWithImage = categoryDishes.find(d => d.image && d.image !== '-' && d.image !== './images/-.jpg');
+        const imageUrl = dishWithImage?.image || categoryDishes[0]?.image || '';
+        
+        return {
+          name: categoryName,
+          progress,
+          count: categoryDishes.length,
+          image: imageUrl
+        };
+      });
+      
+      // Render category cards
+      const grid = wrapper.querySelector('#learn-categories-grid');
+      categories.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'learn-category-card';
+        card.dataset.category = category.name;
+        card.innerHTML = `
+          <div class="category-card-image-wrapper">
+            ${category.image && category.image !== '-' && category.image !== './images/-.jpg' 
+              ? `<img src="${category.image}" alt="${category.name}" class="category-card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />`
+              : ''}
+            <div class="category-card-placeholder" style="display: ${category.image && category.image !== '-' ? 'none' : 'flex'};">
+              <span class="placeholder-icon">🍽️</span>
+            </div>
+            <div class="category-card-label">${category.name}</div>
+          </div>
+          <div class="category-card-name">${category.name}</div>
+          <div class="category-card-progress">${category.progress}%</div>
+        `;
+        grid.appendChild(card);
+        
+        card.addEventListener('click', () => {
+          navigate(`#/learn/menu/category?cat=${encodeURIComponent(category.name)}`);
+        });
+      });
+    }).catch(err => {
+      console.error('Error loading categories:', err);
+      wrapper.querySelector('#learn-categories-grid').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--danger);">Ошибка загрузки категорий</p>';
+    });
+    
+    // Search functionality
+    const searchInput = wrapper.querySelector('#menu-search-input');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const cards = wrapper.querySelectorAll('.learn-category-card');
+      cards.forEach(card => {
+        const categoryName = card.dataset.category.toLowerCase();
+        if (categoryName.includes(query) || query === '') {
+          card.style.display = '';
         } else {
-          items = dishes; // all
+          card.style.display = 'none';
         }
-        
-        if (items.length === 0) {
-          alert('Не найдено блюд для выбранного типа. Попробуйте другой вариант.');
-          return;
-        }
-        
-        pool = shuffle(items.slice());
-        idx = 0;
-        progressBarEl.style.display = 'block';
-        updateProgressBar();
-      });
-    }
-    
-    function renderCard() {
-      if (!pool.length || idx >= pool.length) {
-        cardEl.style.display = '';
-        nameEl.textContent = '🎉 Готово!';
-        catEl.textContent = `Вы изучили все ${pool.length} блюд`;
-        priceEl.textContent = '';
-        hiddenEl.style.display = 'none';
-        revealBtn.disabled = true; knowBtn.disabled = true; dontBtn.disabled = true; nextBtn.disabled = true;
-        progressFillEl.style.width = '100%';
-        counterEl.textContent = `Завершено: ${pool.length} из ${pool.length}`;
-        return;
-      }
-      const d = pool[idx];
-      cardEl.style.display = '';
-      nameEl.textContent = d.name || 'Без названия';
-      catEl.textContent = d.category || 'Без категории';
-      priceEl.textContent = d.price ? `💰 ${d.price}` : '';
-      
-      // Update hidden content
-      compEl.innerHTML = d.composition && d.composition.length && d.composition[0] !== '-' 
-        ? `<strong>Состав:</strong> ${d.composition.join(', ')}` 
-        : '';
-      allEl.innerHTML = d.allergens && d.allergens.length && d.allergens[0] !== '-' 
-        ? `<strong>Аллергены:</strong> ${d.allergens.join(', ')}` 
-        : '';
-      const kcal = d.kbju && /К[.:\s]*(\d+)/i.test(d.kbju) ? parseInt(d.kbju.match(/К[.:\s]*(\d+)/i)[1]) : null;
-      kcalEl.innerHTML = kcal ? `<strong>Калории:</strong> ${kcal} ккал` : '';
-      grammEl.innerHTML = d.gramm ? `<strong>Вес/Объём:</strong> ${d.gramm}` : '';
-      rkEl.innerHTML = d.R_keeper && d.R_keeper !== '-' ? `<strong>R_keeper:</strong> ${d.R_keeper}` : '';
-      descEl.innerHTML = d.description && Array.isArray(d.description) && d.description.length && d.description[0] !== '-'
-        ? d.description.join(' ')
-        : '';
-      
-      hiddenEl.style.display = 'none';
-      revealBtn.disabled = false; 
-      knowBtn.disabled = true; 
-      dontBtn.disabled = true; 
-      nextBtn.disabled = true;
-      updateProgressBar();
-    }
-
-    revealBtn.addEventListener('click', () => {
-      hiddenEl.style.display = '';
-      knowBtn.disabled = false; dontBtn.disabled = false; nextBtn.disabled = false; revealBtn.disabled = true;
-    });
-    knowBtn.addEventListener('click', () => { progress.correct++; updateStats(); });
-    dontBtn.addEventListener('click', () => { progress.wrong++; updateStats(); });
-    nextBtn.addEventListener('click', () => { 
-      idx++; 
-      renderCard(); 
-    });
-    startBtn.addEventListener('click', () => { 
-      loadPool().then(() => {
-        if (pool.length > 0) {
-          renderCard(); 
-        }
-      }).catch(err => {
-        console.error('Error loading pool:', err);
-        alert('Ошибка загрузки меню. Проверьте консоль.');
       });
     });
     
-    panel.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
+    // Back button
+    wrapper.querySelector('#btn-back-learn-menu')?.addEventListener('click', () => navigate('#/learn'));
+    
+    // Check all menu button
+    wrapper.querySelector('#check-all-menu-btn')?.addEventListener('click', () => {
+      navigate('#/learn/menu/flashcards');
+    });
+    
+    // Associations link
+    wrapper.querySelector('#associations-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      // TODO: Implement associations page
+      alert('Страница ассоциаций в разработке');
+    });
     
     return wrapper;
   }
