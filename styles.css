@@ -2186,23 +2186,26 @@ body:has(.learn-page) .app-header {
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin-top: auto;
+  padding: 0 8px;
 }
 
 .module-progress-bar {
-  flex: 1;
-  height: 3px;
-  background: #2a2a2a;
-  border-radius: 2px;
-  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  height: 2px;
+  background: transparent;
 }
 
 .module-progress-fill {
-  height: 100%;
+  min-width: 20px;
+  height: 2px;
   background: #902229;
-  border-radius: 2px;
+  border-radius: 0;
   transition: width 0.3s ease;
+  display: block;
 }
 
 .module-percent {
@@ -2210,8 +2213,8 @@ body:has(.learn-page) .app-header {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  min-width: 32px;
-  text-align: right;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Reference Topics */
