@@ -2018,9 +2018,9 @@ body:has(.learn-page) .app-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 12px auto 8px;
-  width: 120px;
-  height: 120px;
+  margin: 8px auto 6px;
+  width: 100px;
+  height: 100px;
   flex-shrink: 0;
 }
 
@@ -2052,20 +2052,20 @@ body:has(.learn-page) .app-header {
 .progress-label-top,
 .progress-label-middle,
 .progress-label-bottom {
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: 10px;
+  line-height: 1.2;
   color: #ffffff;
 }
 
 /* Individual Category Progress */
 .learn-category-progress {
   padding: 0 20px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-shrink: 0;
 }
 
 .category-progress-item {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -2087,13 +2087,13 @@ body:has(.learn-page) .app-header {
 
 .category-name {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .category-percent {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -2117,10 +2117,10 @@ body:has(.learn-page) .app-header {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 20px;
-  margin-bottom: 8px;
+  padding: 4px 20px;
+  margin-bottom: 6px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   flex-shrink: 0;
 }
@@ -2138,7 +2138,7 @@ body:has(.learn-page) .app-header {
 .learn-modules-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   padding: 0 20px 8px;
   flex: 1;
   min-height: 0;
@@ -2149,15 +2149,13 @@ body:has(.learn-page) .app-header {
   background: #1a1a1a;
   border: 1px solid #902229;
   border-radius: 10px;
-  padding: 16px 12px;
-  text-align: center;
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  justify-content: space-between;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .learn-module-card:hover {
@@ -2167,29 +2165,31 @@ body:has(.learn-page) .app-header {
 }
 
 .module-icon {
-  font-size: 40px;
-  margin-bottom: 4px;
+  font-size: 32px;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.module-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .module-title {
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
-  margin-bottom: 8px;
-  flex: 1;
-  display: flex;
-  align-items: center;
+  line-height: 1.3;
 }
 
 .module-progress-wrapper {
-  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  margin-top: auto;
-  padding: 0 8px;
+  width: 100%;
 }
 
 .module-progress-bar {
@@ -2200,7 +2200,6 @@ body:has(.learn-page) .app-header {
 }
 
 .module-progress-fill {
-  min-width: 20px;
   height: 2px;
   background: #902229;
   border-radius: 0;

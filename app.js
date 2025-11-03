@@ -1342,45 +1342,53 @@
       <div class="learn-modules-grid">
         <div class="learn-module-card" data-module="dishes">
           <div class="module-icon">🍽️</div>
-          <div class="module-title">Изучение блюд</div>
-          <div class="module-progress-wrapper">
-            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, dishesProgress * 0.8))}px;">
-              <div class="module-progress-fill" style="width: 100%"></div>
+          <div class="module-content">
+            <div class="module-title">Изучение блюд</div>
+            <div class="module-progress-wrapper">
+              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, dishesProgress * 0.8))}px;">
+                <div class="module-progress-fill" style="width: 100%"></div>
+              </div>
+              <div class="module-percent">${dishesProgress}%</div>
             </div>
-            <div class="module-percent">${dishesProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="bar-study">
           <div class="module-icon">🍷</div>
-          <div class="module-title">Изучение бара</div>
-          <div class="module-progress-wrapper">
-            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, barStudyProgress * 0.8))}px;">
-              <div class="module-progress-fill" style="width: 100%"></div>
+          <div class="module-content">
+            <div class="module-title">Изучение бара</div>
+            <div class="module-progress-wrapper">
+              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, barStudyProgress * 0.8))}px;">
+                <div class="module-progress-fill" style="width: 100%"></div>
+              </div>
+              <div class="module-percent">${barStudyProgress}%</div>
             </div>
-            <div class="module-percent">${barStudyProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="theory">
           <div class="module-icon">📖</div>
-          <div class="module-title">Теория</div>
-          <div class="module-progress-wrapper">
-            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, theoryModuleProgress * 0.8))}px;">
-              <div class="module-progress-fill" style="width: 100%"></div>
+          <div class="module-content">
+            <div class="module-title">Теория</div>
+            <div class="module-progress-wrapper">
+              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, theoryModuleProgress * 0.8))}px;">
+                <div class="module-progress-fill" style="width: 100%"></div>
+              </div>
+              <div class="module-percent">${theoryModuleProgress}%</div>
             </div>
-            <div class="module-percent">${theoryModuleProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="service-steps">
           <div class="module-icon">🤝</div>
-          <div class="module-title">6 шагов сервиса</div>
-          <div class="module-progress-wrapper">
-            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, serviceStepsProgress * 0.8))}px;">
-              <div class="module-progress-fill" style="width: 100%"></div>
+          <div class="module-content">
+            <div class="module-title">6 шагов сервиса</div>
+            <div class="module-progress-wrapper">
+              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, serviceStepsProgress * 0.8))}px;">
+                <div class="module-progress-fill" style="width: 100%"></div>
+              </div>
+              <div class="module-percent">${serviceStepsProgress}%</div>
             </div>
-            <div class="module-percent">${serviceStepsProgress}%</div>
           </div>
         </div>
       </div>
