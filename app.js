@@ -1233,6 +1233,7 @@
     
     // Route to sub-pages
     if (hash === '#/learn/menu') return viewLearnMenu();
+    if (hash.startsWith('#/learn/menu/category') || hash.startsWith('#/learn/menu/flashcards')) return viewLearnMenuFlashcards();
     if (hash === '#/learn/theory') return viewLearnTheory();
     if (hash === '#/learn/steps') return viewServiceSteps();
     if (hash.startsWith('#/learn/reference/')) return viewReference();
