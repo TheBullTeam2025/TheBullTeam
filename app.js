@@ -137,13 +137,91 @@
     const xpForNext = learningLevel * 100;
     const progress = learningLevel >= 10 ? 100 : Math.round((learningXP / xpForNext) * 100);
     const titles = ['', 'Стажёр', 'Новичок', 'Практикант', 'Официант', 'Профессионал', 'Эксперт', 'Мастер', 'Гуру', 'Легенда', 'Супер-звезда'];
+    const achievementTitles = ['', 'Trainee', 'Waiter', 'Senior Waiter', 'Junior Sommelier', 'Sommelier', 'Senior Sommelier', 'Master', 'Expert', 'Legend', 'Superstar'];
     return {
       level: learningLevel,
       xp: learningXP,
       xpForNext,
       progress,
-      title: titles[learningLevel] || 'Официант'
+      title: titles[learningLevel] || 'Официант',
+      achievementTitle: achievementTitles[learningLevel] || 'Waiter'
     };
+  }
+
+  function calculateCategoryProgress(categoryId) {
+    if (!window.TRAINING_DATA) return 0;
+    
+    if (categoryId === 'menu') {
+      // Calculate menu progress based on flashcards learned
+      try {
+        const progress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learnProgress) || '{"correct":0,"wrong":0}');
+        // Estimate progress based on correct answers (simplified)
+        return Math.min(67, Math.round((progress.correct / 225) * 100)); // 115 dishes + 110 drinks
+      } catch {
+        return 0;
+      }
+    }
+    
+    if (categoryId === 'bar') {
+      // Bar theory progress
+      const section = window.TRAINING_DATA.sections.find(s => s.id === 'bar');
+      if (!section) return 0;
+      let total = section.topics.length;
+      let completed = 0;
+      section.topics.forEach(topic => {
+        if (learningProgress['bar']?.[topic.id]) completed++;
+      });
+      return total > 0 ? Math.round((completed / total) * 100) : 0;
+    }
+    
+    if (categoryId === 'theory') {
+      // Overall theory progress (meat + bar + competencies)
+      let total = 0;
+      let completed = 0;
+      ['meat', 'bar', 'competencies'].forEach(sectionId => {
+        const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
+        if (section) {
+          section.topics.forEach(topic => {
+            total++;
+            if (learningProgress[sectionId]?.[topic.id]) completed++;
+          });
+        }
+      });
+      return total > 0 ? Math.round((completed / total) * 100) : 0;
+    }
+    
+    if (categoryId === 'steps') {
+      // 6 steps of service progress - check if any steps were studied
+      const steps = window.TRAINING_DATA.serviceSteps || [];
+      if (steps.length === 0) return 50; // Default 50% if no data
+      // For now, return a default progress or calculate based on actual study
+      // You can track steps completion in learningProgress['steps']
+      let completed = 0;
+      steps.forEach(step => {
+        if (learningProgress['steps']?.[step.id]) completed++;
+      });
+      // If none studied, return default 50%
+      return steps.length > 0 ? Math.round((completed / steps.length) * 100) : 50;
+    }
+    
+    return 0;
+  }
+
+  function calculateModuleProgress(moduleId) {
+    // Calculate progress for each module card
+    if (moduleId === 'dishes') {
+      return calculateCategoryProgress('menu');
+    }
+    if (moduleId === 'bar-study') {
+      return calculateCategoryProgress('bar');
+    }
+    if (moduleId === 'theory') {
+      return calculateCategoryProgress('theory');
+    }
+    if (moduleId === 'service-steps') {
+      return calculateCategoryProgress('steps');
+    }
+    return 0;
   }
 
   // Purge history monthly to avoid storage bloat
@@ -264,12 +342,18 @@
   // Try to load from embedded data first
   if (typeof DISHES_DATA !== 'undefined') {
     db = DISHES_DATA;
+    // Mark kitchen dishes with source property
+    if (db.dishes && Array.isArray(db.dishes)) {
+      db.dishes = db.dishes.map(dish => ({ ...dish, source: dish.source || 'kitchen' }));
+    }
     console.log('Loaded dishes from embedded data:', db.dishes.length, 'dishes');
     
     // Add bar drinks if available
-    if (typeof BAR_DRINKS_DATA !== 'undefined') {
-      db.dishes = [...db.dishes, ...BAR_DRINKS_DATA.dishes];
-      console.log('Added bar drinks:', BAR_DRINKS_DATA.dishes.length, 'drinks');
+    if (typeof BAR_DRINKS_DATA !== 'undefined' && BAR_DRINKS_DATA.dishes) {
+      // Mark bar drinks with source: 'bar'
+      const markedBarDrinks = BAR_DRINKS_DATA.dishes.map(drink => ({ ...drink, source: 'bar' }));
+      db.dishes = [...db.dishes, ...markedBarDrinks];
+      console.log('Added bar drinks:', markedBarDrinks.length, 'drinks');
       console.log('Total items:', db.dishes.length);
     }
     
@@ -295,6 +379,9 @@
       if (!db || !db.dishes || !Array.isArray(db.dishes)) {
         throw new Error('Invalid JSON structure: missing dishes array');
       }
+      
+      // Mark dishes with source property (default 'kitchen' if not set)
+      db.dishes = db.dishes.map(dish => ({ ...dish, source: dish.source || 'kitchen' }));
       
       console.log('Successfully loaded dishes.json:', db.dishes.length, 'dishes');
       console.log('First few dishes:', db.dishes.slice(0, 3).map(d => d.name));
@@ -1152,108 +1239,190 @@
     if (hash.startsWith('#/learn/flashcards/')) return viewFlashcards();
     if (hash.startsWith('#/learn/tests/')) return viewTests();
     
-    // Main learning page
+    // Main learning page with new design
     const wrapper = document.createElement('div');
-    wrapper.className = 'page';
+    wrapper.className = 'page learn-page';
     
     const levelInfo = getLevelInfo();
     const overallProgress = calculateOverallProgress();
     
+    // Calculate category progress
+    const menuProgress = calculateCategoryProgress('menu');
+    const barProgress = calculateCategoryProgress('bar');
+    const theoryProgress = calculateCategoryProgress('theory');
+    const stepsProgress = calculateCategoryProgress('steps');
+    
+    // Module progress
+    const dishesProgress = calculateModuleProgress('dishes');
+    const barStudyProgress = calculateModuleProgress('bar-study');
+    const theoryModuleProgress = calculateModuleProgress('theory');
+    const serviceStepsProgress = calculateModuleProgress('service-steps');
+    
+    // Get user profile for avatar
+    const userName = profile.name || 'Пользователь';
+    const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'П';
+    
     wrapper.innerHTML = `
-      <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header">
-          <h2>Обучение</h2>
+      <!-- Header with profile and settings -->
+      <div class="learn-header">
+        <div class="learn-profile-avatar" id="learn-profile-btn">
+          <div class="avatar-circle">${userInitials}</div>
+        </div>
+        <h1 class="learn-page-title">Изучение</h1>
+        <button class="learn-settings-btn" id="learn-settings-btn">⚙️</button>
+      </div>
+      
+      <!-- Overall Learning Progress Circle -->
+      <div class="learn-overall-progress">
+        <svg class="circular-progress" viewBox="0 0 120 120">
+          <circle class="progress-track" cx="60" cy="60" r="54" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+          <circle class="progress-bar" cx="60" cy="60" r="54" fill="none" 
+                  stroke="#ef4444" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="${Math.PI * 108}" 
+                  stroke-dashoffset="${Math.PI * 108 * (1 - overallProgress / 100)}"
+                  transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="circular-progress-text">
+          <div class="progress-label-top">Общий</div>
+          <div class="progress-label-middle">прогресс</div>
+          <div class="progress-label-bottom">обучения</div>
+        </div>
+      </div>
+      
+      <!-- Individual Category Progress -->
+      <div class="learn-category-progress">
+        <div class="category-progress-item" data-category="menu">
+          <div class="category-progress-header">
+            <span class="category-name">Меню</span>
+            <span class="category-percent">${menuProgress}%</span>
+          </div>
+          <div class="category-progress-bar">
+            <div class="category-progress-fill" style="width: ${menuProgress}%"></div>
+          </div>
         </div>
         
-        <div class="learn-level-card">
-          <div class="level-badge">
-            <div class="level-number">Ур. ${levelInfo.level}</div>
-            <div class="level-title">${levelInfo.title}</div>
+        <div class="category-progress-item" data-category="bar">
+          <div class="category-progress-header">
+            <span class="category-name">Бар</span>
+            <span class="category-percent">${barProgress}%</span>
           </div>
-          <div class="level-progress-bar">
-            <div class="level-progress-fill" style="width: ${levelInfo.progress}%"></div>
+          <div class="category-progress-bar">
+            <div class="category-progress-fill" style="width: ${barProgress}%"></div>
           </div>
-          <div class="level-xp-text">${levelInfo.xp} / ${levelInfo.xpForNext} XP</div>
         </div>
         
-        <div class="learn-stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${overallProgress}%</div>
-            <div class="stat-label">Общий прогресс</div>
+        <div class="category-progress-item" data-category="theory">
+          <div class="category-progress-header">
+            <span class="category-name">Теория</span>
+            <span class="category-percent">${theoryProgress}%</span>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">${learningLevel}</div>
-            <div class="stat-label">Уровень</div>
+          <div class="category-progress-bar">
+            <div class="category-progress-fill" style="width: ${theoryProgress}%"></div>
+          </div>
+        </div>
+        
+        <div class="category-progress-item" data-category="steps">
+          <div class="category-progress-header">
+            <span class="category-name">6 шагов сервиса</span>
+            <span class="category-percent">${stepsProgress}%</span>
+          </div>
+          <div class="category-progress-bar">
+            <div class="category-progress-fill" style="width: ${stepsProgress}%"></div>
           </div>
         </div>
       </div>
       
-      <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header"><h3>Изучение меню</h3></div>
-        <div class="learn-mode-buttons">
-          <button class="learn-mode-btn" data-mode="menu">
-            <span class="mode-icon">🍽️</span>
-            <span class="mode-title">Учить меню</span>
-            <span class="mode-desc">Флешкарты: 115 блюд + 110 напитков</span>
-          </button>
-        </div>
+      <!-- Current Achievement Level -->
+      <div class="learn-achievement">
+        <span class="achievement-icon">🏆</span>
+        <span class="achievement-text">Level ${levelInfo.level} - ${levelInfo.achievementTitle}</span>
       </div>
       
-      <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header"><h3>Подготовка к 2 грейду</h3></div>
-        <div class="learn-mode-buttons">
-          <button class="learn-mode-btn" data-mode="theory">
-            <span class="mode-icon">📚</span>
-            <span class="mode-title">Теория</span>
-            <span class="mode-desc">Мясо, Бар, Компетенции</span>
-          </button>
-          <button class="learn-mode-btn" data-mode="steps">
-            <span class="mode-icon">👔</span>
-            <span class="mode-title">6 шагов сервиса</span>
-            <span class="mode-desc">Приветствие → Прощание</span>
-          </button>
+      <!-- Learning Module Cards Grid 2x2 -->
+      <div class="learn-modules-grid">
+        <div class="learn-module-card" data-module="dishes">
+          <div class="module-icon">🍽️</div>
+          <div class="module-title">Изучение блюд</div>
+          <div class="module-progress-bar">
+            <div class="module-progress-fill" style="width: ${dishesProgress}%"></div>
+          </div>
+          <div class="module-percent">${dishesProgress}%</div>
         </div>
         
-        <div class="grade2-checklist">
-          <h4 style="padding:0 16px 12px; color:var(--muted); font-size:14px;">Требования для получения:</h4>
-          ${(window.TRAINING_DATA?.grade2Requirements || []).map(req => {
-            const isCompleted = learningProgress.grade2?.[req.id] || false;
-            return `
-              <label class="grade2-item">
-                <input type="checkbox" ${isCompleted ? 'checked' : ''} data-req-id="${req.id}" class="grade2-checkbox" />
-                <span class="grade2-text">${req.title}</span>
-              </label>
-            `;
-          }).join('')}
+        <div class="learn-module-card" data-module="bar-study">
+          <div class="module-icon">🍷</div>
+          <div class="module-title">Изучение бара</div>
+          <div class="module-progress-bar">
+            <div class="module-progress-fill" style="width: ${barStudyProgress}%"></div>
+          </div>
+          <div class="module-percent">${barStudyProgress}%</div>
+        </div>
+        
+        <div class="learn-module-card" data-module="theory">
+          <div class="module-icon">📖</div>
+          <div class="module-title">Теория</div>
+          <div class="module-progress-bar">
+            <div class="module-progress-fill" style="width: ${theoryModuleProgress}%"></div>
+          </div>
+          <div class="module-percent">${theoryModuleProgress}%</div>
+        </div>
+        
+        <div class="learn-module-card" data-module="service-steps">
+          <div class="module-icon">🤝</div>
+          <div class="module-title">6 шагов сервиса</div>
+          <div class="module-progress-bar">
+            <div class="module-progress-fill" style="width: ${serviceStepsProgress}%"></div>
+          </div>
+          <div class="module-percent">${serviceStepsProgress}%</div>
         </div>
       </div>
     `;
     
-    // Event listeners
-    wrapper.querySelectorAll('[data-mode]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        if (mode === 'menu') navigate('#/learn/menu');
-        if (mode === 'theory') navigate('#/learn/theory');
-        if (mode === 'steps') navigate('#/learn/steps');
+    // Event listeners for header
+    wrapper.querySelector('#learn-profile-btn')?.addEventListener('click', () => {
+      navigate('#/profile');
+    });
+    
+    wrapper.querySelector('#learn-settings-btn')?.addEventListener('click', () => {
+      navigate('#/settings');
+    });
+    
+    // Category progress items - navigate to respective sections
+    wrapper.querySelectorAll('.category-progress-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const category = item.dataset.category;
+        if (category === 'menu') {
+          navigate('#/learn/menu');
+        } else if (category === 'bar') {
+          navigate('#/learn/theory'); // Then user can click on Bar section
+        } else if (category === 'theory') {
+          navigate('#/learn/theory');
+        } else if (category === 'steps') {
+          navigate('#/learn/steps');
+        }
       });
     });
     
-    // Grade 2 checklist handlers
-    wrapper.querySelectorAll('.grade2-checkbox').forEach(checkbox => {
-      checkbox.addEventListener('change', (e) => {
-        const reqId = e.target.dataset.reqId;
-        if (!learningProgress.grade2) learningProgress.grade2 = {};
-        learningProgress.grade2[reqId] = e.target.checked;
-        saveLearningProgress();
-        
-        if (e.target.checked) {
-          const result = addXP(25);
-          if (result.leveledUp) {
-            alert(`Поздравляю! Вы достигли уровня ${result.newLevel}!`);
-          }
+    // Module cards - navigate to learning modules
+    wrapper.querySelectorAll('.learn-module-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const module = card.dataset.module;
+        if (module === 'dishes') {
+          navigate('#/learn/menu');
+        } else if (module === 'bar-study') {
+          navigate('#/learn/theory');
+        } else if (module === 'theory') {
+          navigate('#/learn/theory');
+        } else if (module === 'service-steps') {
+          navigate('#/learn/steps');
         }
       });
+    });
+    
+    // Achievement level - could show detailed info (optional)
+    wrapper.querySelector('.learn-achievement')?.addEventListener('click', () => {
+      // Could show modal with level details, requirements, etc.
+      // For now, just visual
     });
     
     return wrapper;
@@ -1280,20 +1449,32 @@
         <button id="learn-start" class="btn primary">Старт</button>
         <div id="learn-stats" style="margin-left:auto; color:var(--muted);">—</div>
       </div>
-      <div id="learn-card" class="learn-card" style="padding:16px; text-align:center; display:none;">
-        <div class="learn-name" style="font-size:20px; font-weight:600;"></div>
-        <div class="learn-category" style="color:var(--muted); margin-top:4px;"></div>
-        <div class="learn-hidden" style="display:none; margin-top:12px; text-align:left;">
-          <div class="learn-comp"></div>
-          <div class="learn-all"></div>
-          <div class="learn-kcal"></div>
-          <div class="learn-rk"></div>
+      <div id="learn-progress-bar" style="padding:12px; display:none;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span id="learn-counter" style="font-size:14px; color:var(--muted);"></span>
+          <span id="learn-session-stats" style="font-size:14px; color:var(--muted);"></span>
         </div>
-        <div class="learn-actions" style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
-          <button id="learn-reveal" class="btn secondary">Показать</button>
-          <button id="learn-know" class="btn success" disabled>Знаю</button>
-          <button id="learn-dont" class="btn danger" disabled>Не знаю</button>
-          <button id="learn-next" class="btn" disabled>Далее</button>
+        <div style="background:var(--bg-secondary); border-radius:8px; height:8px; overflow:hidden;">
+          <div id="learn-progress-fill" style="background:var(--primary); height:100%; transition:width 0.3s; width:0%;"></div>
+        </div>
+      </div>
+      <div id="learn-card" class="learn-card" style="padding:16px; text-align:center; display:none;">
+        <div class="learn-name" style="font-size:24px; font-weight:600; margin-bottom:8px;"></div>
+        <div class="learn-category" style="color:var(--muted); font-size:14px; margin-bottom:16px;"></div>
+        <div class="learn-price" style="font-size:18px; font-weight:500; color:var(--primary); margin-bottom:16px;"></div>
+        <div class="learn-hidden" style="display:none; margin-top:16px; text-align:left; background:var(--bg-secondary); padding:16px; border-radius:8px;">
+          <div class="learn-comp" style="margin-bottom:12px;"></div>
+          <div class="learn-all" style="margin-bottom:12px;"></div>
+          <div class="learn-kcal" style="margin-bottom:12px;"></div>
+          <div class="learn-gramm" style="margin-bottom:12px;"></div>
+          <div class="learn-rk" style="margin-bottom:12px;"></div>
+          <div class="learn-description" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-style:italic; color:var(--muted);"></div>
+        </div>
+        <div class="learn-actions" style="display:flex; gap:8px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+          <button id="learn-reveal" class="btn secondary">Показать детали</button>
+          <button id="learn-know" class="btn success" disabled>✅ Знаю</button>
+          <button id="learn-dont" class="btn danger" disabled>❌ Не знаю</button>
+          <button id="learn-next" class="btn primary" disabled>Следующее →</button>
         </div>
       </div>
     `;
@@ -1307,11 +1488,18 @@
     const cardEl = panel.querySelector('#learn-card');
     const nameEl = panel.querySelector('.learn-name');
     const catEl = panel.querySelector('.learn-category');
+    const priceEl = panel.querySelector('.learn-price');
     const hiddenEl = panel.querySelector('.learn-hidden');
     const compEl = panel.querySelector('.learn-comp');
     const allEl = panel.querySelector('.learn-all');
     const kcalEl = panel.querySelector('.learn-kcal');
+    const grammEl = panel.querySelector('.learn-gramm');
     const rkEl = panel.querySelector('.learn-rk');
+    const descEl = panel.querySelector('.learn-description');
+    const progressBarEl = panel.querySelector('#learn-progress-bar');
+    const progressFillEl = panel.querySelector('#learn-progress-fill');
+    const counterEl = panel.querySelector('#learn-counter');
+    const sessionStatsEl = panel.querySelector('#learn-session-stats');
     const revealBtn = panel.querySelector('#learn-reveal');
     const knowBtn = panel.querySelector('#learn-know');
     const dontBtn = panel.querySelector('#learn-dont');
@@ -1327,36 +1515,77 @@
 
     function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 
+    function updateProgressBar() {
+      if (pool.length === 0) return;
+      const percent = Math.round(((idx) / pool.length) * 100);
+      progressFillEl.style.width = `${percent}%`;
+      counterEl.textContent = `Блюдо ${idx + 1} из ${pool.length}`;
+      const sessionCorrect = progress.correct - (progress.wrong > 0 ? Math.floor(progress.wrong * 0.5) : 0);
+      sessionStatsEl.textContent = `Сессия: ✅ ${Math.max(0, sessionCorrect)}`;
+    }
+
     function loadPool() {
       return loadDb().then(({dishes}) => {
         let items = dishes;
-        if (sourceSel.value === 'kitchen') items = dishes.filter(d => d.source !== 'bar');
-        if (sourceSel.value === 'bar') items = dishes.filter(d => d.source === 'bar');
+        if (sourceSel.value === 'kitchen') {
+          items = dishes.filter(d => d.source !== 'bar' && (!d.source || d.source === 'kitchen'));
+        } else if (sourceSel.value === 'bar') {
+          items = dishes.filter(d => d.source === 'bar');
+        } else {
+          items = dishes; // all
+        }
+        
+        if (items.length === 0) {
+          alert('Не найдено блюд для выбранного типа. Попробуйте другой вариант.');
+          return;
+        }
+        
         pool = shuffle(items.slice());
         idx = 0;
+        progressBarEl.style.display = 'block';
+        updateProgressBar();
       });
     }
-
+    
     function renderCard() {
       if (!pool.length || idx >= pool.length) {
         cardEl.style.display = '';
-        nameEl.textContent = 'Готово!';
-        catEl.textContent = 'Карточки закончились — нажмите Старт';
+        nameEl.textContent = '🎉 Готово!';
+        catEl.textContent = `Вы изучили все ${pool.length} блюд`;
+        priceEl.textContent = '';
         hiddenEl.style.display = 'none';
         revealBtn.disabled = true; knowBtn.disabled = true; dontBtn.disabled = true; nextBtn.disabled = true;
+        progressFillEl.style.width = '100%';
+        counterEl.textContent = `Завершено: ${pool.length} из ${pool.length}`;
         return;
       }
       const d = pool[idx];
       cardEl.style.display = '';
-      nameEl.textContent = d.name;
-      catEl.textContent = d.category || '';
-      compEl.textContent = d.composition && d.composition.length ? `Состав: ${d.composition.join(', ')}` : '';
-      allEl.textContent = d.allergens && d.allergens.length ? `Аллергены: ${d.allergens.join(', ')}` : '';
+      nameEl.textContent = d.name || 'Без названия';
+      catEl.textContent = d.category || 'Без категории';
+      priceEl.textContent = d.price ? `💰 ${d.price}` : '';
+      
+      // Update hidden content
+      compEl.innerHTML = d.composition && d.composition.length && d.composition[0] !== '-' 
+        ? `<strong>Состав:</strong> ${d.composition.join(', ')}` 
+        : '';
+      allEl.innerHTML = d.allergens && d.allergens.length && d.allergens[0] !== '-' 
+        ? `<strong>Аллергены:</strong> ${d.allergens.join(', ')}` 
+        : '';
       const kcal = d.kbju && /К[.:\s]*(\d+)/i.test(d.kbju) ? parseInt(d.kbju.match(/К[.:\s]*(\d+)/i)[1]) : null;
-      kcalEl.textContent = kcal ? `Калории: ${kcal}` : '';
-      rkEl.textContent = d.R_keeper ? `R_keeper: ${d.R_keeper}` : '';
+      kcalEl.innerHTML = kcal ? `<strong>Калории:</strong> ${kcal} ккал` : '';
+      grammEl.innerHTML = d.gramm ? `<strong>Вес/Объём:</strong> ${d.gramm}` : '';
+      rkEl.innerHTML = d.R_keeper && d.R_keeper !== '-' ? `<strong>R_keeper:</strong> ${d.R_keeper}` : '';
+      descEl.innerHTML = d.description && Array.isArray(d.description) && d.description.length && d.description[0] !== '-'
+        ? d.description.join(' ')
+        : '';
+      
       hiddenEl.style.display = 'none';
-      revealBtn.disabled = false; knowBtn.disabled = true; dontBtn.disabled = true; nextBtn.disabled = true;
+      revealBtn.disabled = false; 
+      knowBtn.disabled = true; 
+      dontBtn.disabled = true; 
+      nextBtn.disabled = true;
+      updateProgressBar();
     }
 
     revealBtn.addEventListener('click', () => {
@@ -1365,8 +1594,20 @@
     });
     knowBtn.addEventListener('click', () => { progress.correct++; updateStats(); });
     dontBtn.addEventListener('click', () => { progress.wrong++; updateStats(); });
-    nextBtn.addEventListener('click', () => { idx++; renderCard(); });
-    startBtn.addEventListener('click', () => { loadPool().then(renderCard); });
+    nextBtn.addEventListener('click', () => { 
+      idx++; 
+      renderCard(); 
+    });
+    startBtn.addEventListener('click', () => { 
+      loadPool().then(() => {
+        if (pool.length > 0) {
+          renderCard(); 
+        }
+      }).catch(err => {
+        console.error('Error loading pool:', err);
+        alert('Ошибка загрузки меню. Проверьте консоль.');
+      });
+    });
     
     panel.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
     
@@ -1376,6 +1617,23 @@
   function viewLearnTheory() {
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
+    
+    if (!window.TRAINING_DATA || !window.TRAINING_DATA.sections) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <div class="page-title"><h2>Теория для 2 грейда</h2></div>
+            <button id="btn-back-learn" class="btn">Назад</button>
+          </div>
+          <div style="padding:16px; text-align:center; color:var(--danger);">
+            <p>Ошибка: Данные обучения не загружены.</p>
+            <p style="font-size:14px; margin-top:8px;">Пожалуйста, обновите страницу.</p>
+          </div>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-learn')?.addEventListener('click', () => navigate('#/learn'));
+      return wrapper;
+    }
     
     wrapper.innerHTML = `
       <div class="panel">
@@ -1424,9 +1682,26 @@
       const section = card.dataset.section;
       const buttons = card.querySelectorAll('.theory-actions button');
       
-      buttons[0]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/reference/${section}`); });
-      buttons[1]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/flashcards/${section}`); });
-      buttons[2]?.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/learn/tests/${section}`); });
+      if (!section || buttons.length < 3) {
+        console.warn('Invalid theory card setup:', section);
+        return;
+      }
+      
+      buttons[0]?.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        e.preventDefault();
+        navigate(`#/learn/reference/${section}`); 
+      });
+      buttons[1]?.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        e.preventDefault();
+        navigate(`#/learn/flashcards/${section}`); 
+      });
+      buttons[2]?.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        e.preventDefault();
+        navigate(`#/learn/tests/${section}`); 
+      });
     });
     
     return wrapper;
@@ -1475,15 +1750,33 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
     
-    const sectionId = location.hash.split('/').pop();
-    if (!window.TRAINING_DATA) {
-      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+    const sectionId = (location.hash || '').split('/').pop();
+    if (!window.TRAINING_DATA || !window.TRAINING_DATA.sections) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Ошибка</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Данные обучения не загружены. Пожалуйста, обновите страницу.</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
       return wrapper;
     }
     
     const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
     if (!section) {
-      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Раздел не найден</p></div>';
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Ошибка</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Раздел "${sectionId}" не найден. Доступные разделы: ${window.TRAINING_DATA.sections.map(s => s.id).join(', ')}</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
       return wrapper;
     }
     
@@ -1555,9 +1848,18 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
     
-    const sectionId = location.hash.split('/').pop();
-    if (!window.TRAINING_DATA) {
-      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+    const sectionId = (location.hash || '').split('/').pop();
+    if (!window.TRAINING_DATA || !window.TRAINING_DATA.sections) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Ошибка</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Данные обучения не загружены. Пожалуйста, обновите страницу.</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
       return wrapper;
     }
     
@@ -1570,7 +1872,16 @@
     } else {
       const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
       if (!section) {
-        wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Раздел не найден</p></div>';
+        wrapper.innerHTML = `
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Ошибка</h2>
+              <button id="btn-back-theory" class="btn">Назад</button>
+            </div>
+            <p style="padding:16px;">Раздел "${sectionId}" не найден. Доступные разделы: ${window.TRAINING_DATA.sections.map(s => s.id).join(', ')}</p>
+          </div>
+        `;
+        wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
         return wrapper;
       }
       sectionTitle = section.title;
@@ -1719,15 +2030,47 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
     
-    const sectionId = location.hash.split('/').pop();
-    if (!window.TRAINING_DATA) {
-      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Данные не загружены</p></div>';
+    const sectionId = (location.hash || '').split('/').pop();
+    if (!window.TRAINING_DATA || !window.TRAINING_DATA.sections) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Ошибка</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Данные обучения не загружены. Пожалуйста, обновите страницу.</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
       return wrapper;
     }
     
     const section = window.TRAINING_DATA.sections.find(s => s.id === sectionId);
-    if (!section || !section.tests) {
-      wrapper.innerHTML = '<div class="panel"><p style="padding:16px;">Тесты не найдены</p></div>';
+    if (!section) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Ошибка</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Раздел "${sectionId}" не найден. Доступные разделы: ${window.TRAINING_DATA.sections.map(s => s.id).join(', ')}</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
+      return wrapper;
+    }
+    
+    if (!section.tests || section.tests.length === 0) {
+      wrapper.innerHTML = `
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Тесты: ${section.title}</h2>
+            <button id="btn-back-theory" class="btn">Назад</button>
+          </div>
+          <p style="padding:16px;">Тесты для этого раздела пока не добавлены.</p>
+        </div>
+      `;
+      wrapper.querySelector('#btn-back-theory')?.addEventListener('click', () => navigate('#/learn/theory'));
       return wrapper;
     }
     
@@ -3910,5 +4253,6 @@
   updateNavItems();
   render();
 })();
+
 
 

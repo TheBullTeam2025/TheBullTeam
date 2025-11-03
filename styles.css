@@ -1927,6 +1927,249 @@ body {
   font-size: 14px;
 }
 
+/* New Learning Page Design - Dark Theme with Red Accents */
+
+.learn-page {
+  background: #000000;
+  color: #ffffff;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Header with Profile and Settings */
+.learn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #000000;
+}
+
+.learn-profile-avatar {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: #ffffff;
+  border: 2px solid #3a3a3a;
+}
+
+.learn-page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.learn-settings-btn {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.learn-settings-btn:hover {
+  opacity: 0.7;
+}
+
+/* Overall Learning Progress Circle */
+.learn-overall-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32px auto;
+  width: 180px;
+  height: 180px;
+}
+
+.circular-progress {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-track {
+  stroke: #2a2a2a;
+}
+
+.progress-bar {
+  stroke: #ef4444;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.circular-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.progress-label-top,
+.progress-label-middle,
+.progress-label-bottom {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+/* Individual Category Progress */
+.learn-category-progress {
+  padding: 0 20px;
+  margin-bottom: 24px;
+}
+
+.category-progress-item {
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.category-progress-item:hover {
+  opacity: 0.8;
+}
+
+.category-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.category-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.category-percent {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.category-progress-bar {
+  height: 6px;
+  background: #2a2a2a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.category-progress-fill {
+  height: 100%;
+  background: #ef4444;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Current Achievement Level */
+.learn-achievement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.achievement-icon {
+  font-size: 20px;
+  color: #ef4444;
+}
+
+.achievement-text {
+  color: #ffffff;
+}
+
+/* Learning Module Cards Grid 2x2 */
+.learn-modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 20px 100px;
+}
+
+.learn-module-card {
+  background: #1a1a1a;
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.learn-module-card:hover {
+  border-color: #dc2626;
+  background: #1f1f1f;
+  transform: translateY(-2px);
+}
+
+.module-icon {
+  font-size: 48px;
+  margin-bottom: 4px;
+}
+
+.module-title {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.module-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.module-progress-fill {
+  height: 100%;
+  background: #ef4444;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.module-percent {
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Reference Topics */
 .reference-topics {
   padding: 16px;
