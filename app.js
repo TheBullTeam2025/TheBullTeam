@@ -1275,9 +1275,15 @@
       <!-- Overall Learning Progress Circle -->
       <div class="learn-overall-progress">
         <svg class="circular-progress" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#c00000;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#902229;stop-opacity:1" />
+            </linearGradient>
+          </defs>
           <circle class="progress-track" cx="60" cy="60" r="54" fill="none" stroke="#2a2a2a" stroke-width="8"/>
           <circle class="progress-bar" cx="60" cy="60" r="54" fill="none" 
-                  stroke="#902229" stroke-width="8" stroke-linecap="round"
+                  stroke="url(#progressGradient)" stroke-width="8" stroke-linecap="round"
                   stroke-dasharray="${Math.PI * 108}" 
                   stroke-dashoffset="${Math.PI * 108 * (1 - overallProgress / 100)}"
                   transform="rotate(-90 60 60)"/>
@@ -1342,53 +1348,45 @@
       <div class="learn-modules-grid">
         <div class="learn-module-card" data-module="dishes">
           <div class="module-icon">🍽️</div>
-          <div class="module-content">
-            <div class="module-title">Изучение блюд</div>
-            <div class="module-progress-wrapper">
-              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, dishesProgress * 0.8))}px;">
-                <div class="module-progress-fill" style="width: 100%"></div>
-              </div>
-              <div class="module-percent">${dishesProgress}%</div>
+          <div class="module-title">Изучение блюд</div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, dishesProgress * 0.8))}px;">
+              <div class="module-progress-fill" style="width: 100%"></div>
             </div>
+            <div class="module-percent">${dishesProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="bar-study">
           <div class="module-icon">🍷</div>
-          <div class="module-content">
-            <div class="module-title">Изучение бара</div>
-            <div class="module-progress-wrapper">
-              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, barStudyProgress * 0.8))}px;">
-                <div class="module-progress-fill" style="width: 100%"></div>
-              </div>
-              <div class="module-percent">${barStudyProgress}%</div>
+          <div class="module-title">Изучение бара</div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, barStudyProgress * 0.8))}px;">
+              <div class="module-progress-fill" style="width: 100%"></div>
             </div>
+            <div class="module-percent">${barStudyProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="theory">
           <div class="module-icon">📖</div>
-          <div class="module-content">
-            <div class="module-title">Теория</div>
-            <div class="module-progress-wrapper">
-              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, theoryModuleProgress * 0.8))}px;">
-                <div class="module-progress-fill" style="width: 100%"></div>
-              </div>
-              <div class="module-percent">${theoryModuleProgress}%</div>
+          <div class="module-title">Теория</div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, theoryModuleProgress * 0.8))}px;">
+              <div class="module-progress-fill" style="width: 100%"></div>
             </div>
+            <div class="module-percent">${theoryModuleProgress}%</div>
           </div>
         </div>
         
         <div class="learn-module-card" data-module="service-steps">
           <div class="module-icon">🤝</div>
-          <div class="module-content">
-            <div class="module-title">6 шагов сервиса</div>
-            <div class="module-progress-wrapper">
-              <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, serviceStepsProgress * 0.8))}px;">
-                <div class="module-progress-fill" style="width: 100%"></div>
-              </div>
-              <div class="module-percent">${serviceStepsProgress}%</div>
+          <div class="module-title">6 шагов сервиса</div>
+          <div class="module-progress-wrapper">
+            <div class="module-progress-bar" style="width: ${Math.min(80, Math.max(20, serviceStepsProgress * 0.8))}px;">
+              <div class="module-progress-fill" style="width: 100%"></div>
             </div>
+            <div class="module-percent">${serviceStepsProgress}%</div>
           </div>
         </div>
       </div>
