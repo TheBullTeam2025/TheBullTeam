@@ -1277,7 +1277,7 @@
         <svg class="circular-progress" viewBox="0 0 120 120">
           <circle class="progress-track" cx="60" cy="60" r="54" fill="none" stroke="#2a2a2a" stroke-width="8"/>
           <circle class="progress-bar" cx="60" cy="60" r="54" fill="none" 
-                  stroke="#ef4444" stroke-width="8" stroke-linecap="round"
+                  stroke="#902229" stroke-width="8" stroke-linecap="round"
                   stroke-dasharray="${Math.PI * 108}" 
                   stroke-dashoffset="${Math.PI * 108 * (1 - overallProgress / 100)}"
                   transform="rotate(-90 60 60)"/>
