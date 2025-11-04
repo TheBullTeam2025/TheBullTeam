@@ -1,14 +1,14 @@
 :root {
-  --bg: #0A0B0D;
-  --panel: #121826;
-  --surface: #1a1f2e;
+  --bg: #1a1a1a;
+  --panel: #1f1f1f;
+  --surface: #1f1f1f;
   --text: #e7e9ee;
   --muted: #96a0af;
   --primary: #902229; /* red accent color */
   --primary-900: #3a0d10;
   --accent: #902229;
   --danger: #902229;
-  --divider: #232b3a;
+  --divider: #2a2a2a;
   --shadow: 0 6px 18px rgba(0,0,0,.35);
 }
 
@@ -21,7 +21,7 @@ html, body {
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Noto Sans', 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
-  background: #0A0B0D;
+  background: #1a1a1a;
   color: var(--text);
   -webkit-text-size-adjust: 100%;
   -webkit-touch-callout: none;
@@ -37,7 +37,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #0A0B0D;
+  background: #1a1a1a;
   border-bottom: 1px solid var(--divider);
 }
 
@@ -90,7 +90,7 @@ body:has(.learn-page) .app-header {
   border: 1px solid var(--divider);
   border-radius: 8px;
   padding: 10px;
-  background: #0f1626;
+  background: #1f1f1f;
   box-shadow: var(--shadow);
 }
 .table-card h3 { margin: 0; font-size: 16px; }
@@ -148,7 +148,7 @@ body:has(.learn-page) .app-header {
 
 .rename-input {
   width: 100%;
-  background: #0b1220;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 8px;
@@ -171,7 +171,7 @@ body:has(.learn-page) .app-header {
 .order-form { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .form-row { display: flex; flex-direction: column; gap: 6px; }
 .form-row input {
-  background: #0b1220;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 8px;
@@ -193,20 +193,20 @@ body:has(.learn-page) .app-header {
   border: 1px solid var(--divider);
   border-radius: 8px;
   padding: 8px 10px;
-  background: #0f1628;
+  background: #1f1f1f;
 }
 .queue-item small { color: var(--muted); }
 
 .btn {
   cursor: pointer;
-  background: #111827;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   padding: 8px 12px;
   border-radius: 8px;
 }
 .btn.primary { background: var(--primary); border-color: #b91c1c; color: #fee2e2; }
-.btn.secondary { background: #1f2937; border-color: var(--divider); color: #e5e7eb; }
+.btn.secondary { background: #1f1f1f; border-color: var(--divider); color: #e5e7eb; }
 .btn.danger { background: #3f0b0b; border-color: var(--danger); color: #fee2e2; }
 .btn:disabled { opacity: .6; cursor: not-allowed; }
 
@@ -217,7 +217,7 @@ body:has(.learn-page) .app-header {
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--divider);
-  background: #0b1220;
+  background: #1f1f1f;
   font-size: 12px;
   color: var(--muted);
 }
@@ -232,7 +232,7 @@ body:has(.learn-page) .app-header {
 .search-row { display: flex; gap: 8px; padding: 12px; }
 .search-row input { 
   flex: 1; 
-  background: #0b1220; 
+  background: #1f1f1f; 
   color: var(--text); 
   border: 1px solid var(--divider); 
   border-radius: 8px; 
@@ -249,7 +249,7 @@ body:has(.learn-page) .app-header {
 .dish-card {
   border: 1px solid var(--divider);
   border-radius: 12px;
-  background: #0f1628;
+  background: #1f1f1f;
   overflow: hidden;
   box-shadow: var(--shadow);
 }
@@ -266,7 +266,7 @@ body:has(.learn-page) .app-header {
   height: 80px;
   border-radius: 8px;
   object-fit: cover;
-  background: #0b1220;
+  background: #1f1f1f;
   flex-shrink: 0;
 }
 
@@ -390,7 +390,7 @@ body:has(.learn-page) .app-header {
 
 .dish-rkeeper {
   padding: 8px 12px;
-  background: #1a1f2e;
+  background: #1f1f1f;
   border-top: 1px solid var(--divider);
   font-size: 12px;
   color: var(--muted);
@@ -439,7 +439,7 @@ body:has(.learn-page) .app-header {
 
 .dish-notes-input {
   width: 100%;
-  background: #0b1220;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 6px;
@@ -467,11 +467,11 @@ body:has(.learn-page) .app-header {
   color: var(--muted);
   opacity: 0.7;
 }
-.bottom-bar { position: sticky; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; padding: 12px; background: rgba(10,15,26,.88); backdrop-filter: blur(6px); border-top: 1px solid var(--divider); }
-.chip { background: #1f2937; color: #e5e7eb; border: 1px solid var(--divider); padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+.bottom-bar { position: sticky; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; padding: 12px; background: rgba(26,26,26,.88); backdrop-filter: blur(6px); border-top: 1px solid var(--divider); }
+.chip { background: #1f1f1f; color: #e5e7eb; border: 1px solid var(--divider); padding: 6px 10px; border-radius: 999px; font-size: 12px; }
 
 /* Search suggestion */
-.suggestion { display:flex; align-items:center; justify-content:space-between; gap:8px; margin: 0 12px 12px; padding:10px 12px; background:#0f1626; border:1px solid var(--divider); border-radius:10px; }
+.suggestion { display:flex; align-items:center; justify-content:space-between; gap:8px; margin: 0 12px 12px; padding:10px 12px; background:#1f1f1f; border:1px solid var(--divider); border-radius:10px; }
 .suggestion b { color:#fde68a; }
 
 /* Order items */
@@ -483,7 +483,7 @@ body:has(.learn-page) .app-header {
   border: 1px solid var(--divider);
   border-radius: 12px;
   padding: 12px;
-  background: #0f1626;
+  background: #1f1f1f;
   margin-bottom: 8px;
 }
 
@@ -491,7 +491,7 @@ body:has(.learn-page) .app-header {
   width: 60px;
   height: 60px;
   border-radius: 8px;
-  background: #0b1220;
+  background: #1f1f1f;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -557,7 +557,7 @@ body:has(.learn-page) .app-header {
 
 .order-notes input {
   width: 100%;
-  background: #0b1220;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 6px;
@@ -619,7 +619,7 @@ body:has(.learn-page) .app-header {
   left: 0;
   right: 0;
   display: flex;
-  background: #0A0B0C;
+  background: #1a1a1a;
   border-top: 1px solid var(--divider);
   z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom);
@@ -708,7 +708,7 @@ body:has(.learn-page) .app-header {
 
 .profile-content .panel input {
   flex: 1;
-  background: #0b1220;
+  background: #1f1f1f;
   color: var(--text);
   border: 1px solid var(--divider);
   border-radius: 10px;
@@ -779,7 +779,7 @@ body:has(.learn-page) .app-header {
 /* History cards in settings */
 .history-list { display: flex; flex-direction: column; gap: 12px; }
 .history-row .history-card {
-  background: #0f1626;
+  background: #1f1f1f;
   border: 1px solid var(--divider);
   border-radius: 10px;
   padding: 12px;
@@ -864,7 +864,7 @@ body:has(.learn-page) .app-header {
 }
 
 .confirm-content {
-  background: #1e2329 !important;
+  background: #1f1f1f !important;
   border: 2px solid #3a4047 !important;
   border-radius: 16px;
   padding: 24px;
@@ -1943,7 +1943,7 @@ body:has(.learn-page) .app-header {
 /* New Learning Page Design - Dark Theme with Red Accents */
 
 .learn-page {
-  background: #0A0B0D;
+  background: #1a1a1a;
   color: #ffffff;
   padding: 0;
   margin: 0;
@@ -1970,7 +1970,7 @@ body:has(.learn-page) .app-header {
   justify-content: space-between;
   padding: 12px 20px;
   padding-top: max(20px, calc(12px + env(safe-area-inset-top, 0px)));
-  background: #0A0B0D;
+  background: #1a1a1a;
   flex-shrink: 0;
 }
 
@@ -2158,7 +2158,7 @@ body:has(.learn-page) .app-header {
 }
 
 .learn-module-card {
-  background: #1a1a1a;
+  background: #1f1f1f;
   border: 1px solid #902229;
   border-radius: 16px;
   padding: 14px 16px;
@@ -2229,7 +2229,7 @@ body:has(.learn-page) .app-header {
 
 /* Learn Menu Page - Categories */
 .learn-menu-page {
-  background: #0A0B0D;
+  background: #1a1a1a;
   padding: 0;
   min-height: 100vh;
   padding-bottom: 80px;
@@ -2240,7 +2240,7 @@ body:has(.learn-page) .app-header {
   align-items: center;
   justify-content: space-between;
   padding: 20px 20px 12px;
-  background: #0A0B0D;
+  background: #1a1a1a;
 }
 
 .back-btn {
@@ -2282,7 +2282,7 @@ body:has(.learn-page) .app-header {
 .learn-menu-search {
   display: flex;
   align-items: center;
-  background: #1a1a1a;
+  background: #1f1f1f;
   border-radius: 12px;
   padding: 12px 16px;
   margin: 0 20px 20px;
@@ -2315,7 +2315,7 @@ body:has(.learn-page) .app-header {
 }
 
 .learn-category-card {
-  background: #1a1a1a;
+  background: #1f1f1f;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -2439,7 +2439,7 @@ body:has(.learn-page) .app-header {
 
 /* Learn Menu Flashcards Page */
 .learn-flashcards-page {
-  background: #0A0B0D;
+  background: #1a1a1a;
   min-height: 100vh;
   padding-bottom: 80px;
   display: flex;
@@ -2451,7 +2451,7 @@ body:has(.learn-page) .app-header {
   align-items: center;
   justify-content: space-between;
   padding: 20px 20px 12px;
-  background: #0A0B0D;
+  background: #1a1a1a;
 }
 
 .flashcards-progress {
@@ -2512,7 +2512,7 @@ body:has(.learn-page) .app-header {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  background: #1a1a1a;
+  background: #1f1f1f;
   border: 2px solid #902229;
   border-radius: 16px;
   display: flex;
