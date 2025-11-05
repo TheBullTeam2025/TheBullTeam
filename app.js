@@ -163,15 +163,31 @@
     }
     
     if (categoryId === 'bar') {
-      // Bar theory progress
-      const section = window.TRAINING_DATA.sections.find(s => s.id === 'bar');
-      if (!section) return 0;
-      let total = section.topics.length;
-      let completed = 0;
-      section.topics.forEach(topic => {
-        if (learningProgress['bar']?.[topic.id]) completed++;
-      });
-      return total > 0 ? Math.round((completed / total) * 100) : 0;
+      // Calculate bar progress based on bar drinks flashcards learned
+      try {
+        let learningProgress = {};
+        try {
+          learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+        } catch {}
+        
+        // Count bar drinks studied
+        let studied = 0;
+        for (let key in learningProgress) {
+          if (key.startsWith('bar_')) studied++;
+        }
+        
+        // Get total bar drinks count
+        if (db && db.dishes) {
+          const barDrinks = db.dishes.filter(d => d.source === 'bar');
+          const total = barDrinks.length;
+          return total > 0 ? Math.round((studied / total) * 100) : 0;
+        }
+        
+        // Fallback: try to get count from loaded data
+        return 0;
+      } catch {
+        return 0;
+      }
     }
     
     if (categoryId === 'theory') {
@@ -618,6 +634,11 @@
         <label class="filter-label">Исключить аллергены (через запятую):</label>
         <input type="text" id="allergens-exclude" class="filter-input" placeholder="например: глютен, орехи, лактоза" />
       </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Поиск по аллергенам (через запятую):</label>
+        <input type="text" id="allergens-include" class="filter-input" placeholder="например: перец, яйца, молоко" />
+      </div>
         
         <div class="filter-group">
           <label class="filter-label">Сортировка:</label>
@@ -672,6 +693,7 @@
     const calorieMin = panel.querySelector('#calorie-min');
     const calorieMax = panel.querySelector('#calorie-max');
     const allergensExcludeInput = panel.querySelector('#allergens-exclude');
+    const allergensIncludeInput = panel.querySelector('#allergens-include');
     const sortSelect = panel.querySelector('#sort-select');
     const applyFiltersBtn = panel.querySelector('#apply-filters');
     const clearFiltersBtn = panel.querySelector('#clear-filters');
@@ -687,6 +709,7 @@
       calorieMin: null,
       calorieMax: null,
       allergensExclude: [],
+      allergensInclude: [],
       sort: 'relevance'
     };
     
@@ -720,6 +743,7 @@
             calorieMin: saved.calorieMin ?? null,
             calorieMax: saved.calorieMax ?? null,
             allergensExclude: Array.isArray(saved.allergensExclude) ? saved.allergensExclude : [],
+            allergensInclude: Array.isArray(saved.allergensInclude) ? saved.allergensInclude : [],
             sort: saved.sort || 'relevance'
           };
           categoryFilter.value = currentFilters.category;
@@ -728,6 +752,7 @@
           calorieMin.value = currentFilters.calorieMin ?? '';
           calorieMax.value = currentFilters.calorieMax ?? '';
           allergensExcludeInput.value = (currentFilters.allergensExclude || []).join(', ');
+          allergensIncludeInput.value = (currentFilters.allergensInclude || []).join(', ');
           sortSelect.value = currentFilters.sort;
           // Apply immediately to reflect saved state
           applyFilters();
@@ -784,6 +809,10 @@
         .split(',')
         .map(s => s.trim().toLowerCase())
         .filter(Boolean);
+      currentFilters.allergensInclude = (allergensIncludeInput.value || '')
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
       currentFilters.sort = sortSelect.value;
       try { localStorage.setItem(STORAGE_KEYS.searchFilters, JSON.stringify(currentFilters)); } catch {}
       
@@ -817,6 +846,17 @@
           const dishAll = Array.isArray(dish.allergens) ? dish.allergens.map(a => String(a).toLowerCase()) : [];
           const hasExcluded = currentFilters.allergensExclude.some(ex => dishAll.includes(ex));
           if (hasExcluded) return false;
+        }
+
+        // Allergens include filter (search by allergen)
+        if (currentFilters.allergensInclude && currentFilters.allergensInclude.length > 0) {
+          const dishAll = Array.isArray(dish.allergens) ? dish.allergens.map(a => String(a).toLowerCase()) : [];
+          // Check if dish contains any of the included allergens
+          const hasIncluded = currentFilters.allergensInclude.some(inc => {
+            // Check exact match or substring match
+            return dishAll.some(allergen => allergen.includes(inc) || inc.includes(allergen));
+          });
+          if (!hasIncluded) return false;
         }
         
         return true;
@@ -942,6 +982,9 @@
       if (currentFilters.allergensExclude && currentFilters.allergensExclude.length > 0) {
         filters.push(`Без аллергенов: ${currentFilters.allergensExclude.join(', ')}`);
       }
+      if (currentFilters.allergensInclude && currentFilters.allergensInclude.length > 0) {
+        filters.push(`С аллергенами: ${currentFilters.allergensInclude.join(', ')}`);
+      }
       if (currentFilters.sort !== 'relevance') {
         const sortNames = {
           'name': 'По названию',
@@ -971,6 +1014,7 @@
         calorieMin: null,
         calorieMax: null,
         allergensExclude: [],
+        allergensInclude: [],
         sort: 'relevance'
       };
       
@@ -980,6 +1024,7 @@
       calorieMin.value = '';
       calorieMax.value = '';
       allergensExcludeInput.value = '';
+      allergensIncludeInput.value = '';
       sortSelect.value = 'relevance';
       try { localStorage.removeItem(STORAGE_KEYS.searchFilters); } catch {}
       
@@ -1234,6 +1279,8 @@
     // Route to sub-pages
     if (hash === '#/learn/menu') return viewLearnMenu();
     if (hash.startsWith('#/learn/menu/category') || hash.startsWith('#/learn/menu/flashcards')) return viewLearnMenuFlashcards();
+    if (hash === '#/learn/bar') return viewLearnBar();
+    if (hash.startsWith('#/learn/bar/category') || hash.startsWith('#/learn/bar/flashcards')) return viewLearnBarFlashcards();
     if (hash === '#/learn/theory') return viewLearnTheory();
     if (hash === '#/learn/steps') return viewServiceSteps();
     if (hash.startsWith('#/learn/reference/')) return viewReference();
@@ -1405,7 +1452,7 @@
         if (category === 'menu') {
           navigate('#/learn/menu');
         } else if (category === 'bar') {
-          navigate('#/learn/theory'); // Then user can click on Bar section
+          navigate('#/learn/bar');
         } else if (category === 'theory') {
           navigate('#/learn/theory');
         } else if (category === 'steps') {
@@ -1421,7 +1468,7 @@
         if (module === 'dishes') {
           navigate('#/learn/menu');
         } else if (module === 'bar-study') {
-          navigate('#/learn/theory');
+          navigate('#/learn/bar');
         } else if (module === 'theory') {
           navigate('#/learn/theory');
         } else if (module === 'service-steps') {
@@ -1890,6 +1937,452 @@
     dontKnowBtn.addEventListener('click', markAsUnknown);
     
     wrapper.querySelector('#btn-back-flashcards')?.addEventListener('click', () => navigate('#/learn/menu'));
+    
+    return wrapper;
+  }
+
+  // Bar drinks learning page (similar to menu learning)
+  function viewLearnBar() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page learn-menu-page';
+    
+    wrapper.innerHTML = `
+      <div class="learn-menu-header">
+        <button id="btn-back-learn-bar" class="back-btn">←</button>
+        <h1 class="learn-menu-title">Изучение бара</h1>
+        <div style="width: 40px;"></div>
+      </div>
+      <p class="learn-menu-subtitle">Выберите категорию напитков для изучения</p>
+      
+      <div class="learn-menu-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="bar-search-input" class="menu-search-input" placeholder="Поиск по барному меню..." />
+      </div>
+      
+      <div id="learn-bar-categories-grid" class="learn-categories-grid">
+        <!-- Categories will be loaded here -->
+      </div>
+      
+      <button id="check-all-bar-btn" class="check-all-menu-btn">Проверить весь бар</button>
+    `;
+    
+    // Load categories and render cards
+    loadDb().then(({dishes}) => {
+      const barDrinks = dishes.filter(d => d.source === 'bar');
+      
+      // Get unique categories
+      const categoriesMap = new Map();
+      barDrinks.forEach(drink => {
+        const category = drink.category || 'Без категории';
+        if (!categoriesMap.has(category)) {
+          categoriesMap.set(category, []);
+        }
+        categoriesMap.get(category).push(drink);
+      });
+      
+      // Get learning progress
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      
+      // Calculate progress for each category
+      const categories = Array.from(categoriesMap.entries()).map(([categoryName, categoryDrinks]) => {
+        let studied = 0;
+        categoryDrinks.forEach(drink => {
+          if (learningProgress[`bar_${drink.name}`]) studied++;
+        });
+        const progress = categoryDrinks.length > 0 ? Math.round((studied / categoryDrinks.length) * 100) : 0;
+        
+        // Get first drink with image for category image
+        const drinkWithImage = categoryDrinks.find(d => d.image && d.image !== '-' && d.image !== './images/-.jpg');
+        const imageUrl = drinkWithImage?.image || categoryDrinks[0]?.image || '';
+        
+        return {
+          name: categoryName,
+          progress,
+          count: categoryDrinks.length,
+          image: imageUrl
+        };
+      });
+      
+      // Render category cards
+      const grid = wrapper.querySelector('#learn-bar-categories-grid');
+      categories.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'learn-category-card';
+        card.dataset.category = category.name;
+        card.innerHTML = `
+          <div class="category-card-image-wrapper">
+            ${category.image && category.image !== '-' && category.image !== './images/-.jpg' 
+              ? `<img src="${category.image}" alt="${category.name}" class="category-card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />`
+              : ''}
+            <div class="category-card-placeholder" style="display: ${category.image && category.image !== '-' ? 'none' : 'flex'};">
+              <span class="placeholder-icon">🍷</span>
+            </div>
+            <div class="category-card-label">${category.name}</div>
+          </div>
+          <div class="category-card-name">${category.name}</div>
+          <div class="category-card-progress">${category.progress}%</div>
+        `;
+        grid.appendChild(card);
+        
+        card.addEventListener('click', () => {
+          navigate(`#/learn/bar/category?cat=${encodeURIComponent(category.name)}`);
+        });
+      });
+    }).catch(err => {
+      console.error('Error loading bar categories:', err);
+      wrapper.querySelector('#learn-bar-categories-grid').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--danger);">Ошибка загрузки категорий</p>';
+    });
+    
+    // Search functionality
+    const searchInput = wrapper.querySelector('#bar-search-input');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const cards = wrapper.querySelectorAll('.learn-category-card');
+      cards.forEach(card => {
+        const categoryName = card.dataset.category.toLowerCase();
+        if (categoryName.includes(query) || query === '') {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+    
+    // Back button
+    wrapper.querySelector('#btn-back-learn-bar')?.addEventListener('click', () => navigate('#/learn'));
+    
+    // Check all bar button
+    wrapper.querySelector('#check-all-bar-btn')?.addEventListener('click', () => {
+      navigate('#/learn/bar/flashcards');
+    });
+    
+    return wrapper;
+  }
+
+  function viewLearnBarFlashcards() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page learn-flashcards-page';
+    
+    // Get category from URL
+    const hash = location.hash || '';
+    const urlParams = new URLSearchParams(hash.split('?')[1] || '');
+    const categoryName = urlParams.get('cat') || '';
+    const isAllBar = hash.includes('/flashcards');
+    
+    let drinks = [];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let isDragging = false;
+    
+    wrapper.innerHTML = `
+      <div class="flashcards-header">
+        <button id="btn-back-bar-flashcards" class="back-btn">←</button>
+        <div class="flashcards-progress">
+          <div class="flashcards-progress-bar">
+            <div id="flashcards-progress-fill" class="flashcards-progress-fill"></div>
+          </div>
+        </div>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="flashcards-container">
+        <div id="flashcard" class="flashcard">
+          <div class="flashcard-inner">
+            <div class="flashcard-front">
+              <div class="flashcard-image-wrapper">
+                <div class="flashcard-image-placeholder"></div>
+                <img id="flashcard-image" class="flashcard-image" style="display: none;" />
+              </div>
+              <div class="flashcard-content">
+                <div class="flashcard-name"></div>
+                <div class="flashcard-category-tag"></div>
+              </div>
+              <button id="flip-btn" class="flip-btn">
+                <span class="flip-icon">↻</span>
+                <span>Перевернуть</span>
+              </button>
+            </div>
+            <div class="flashcard-back">
+              <div class="flashcard-back-content">
+                <div class="flashcard-back-title">Состав / Ингредиенты</div>
+                <div id="flashcard-composition" class="flashcard-composition"></div>
+                <div class="flashcard-back-title" style="margin-top: 20px;">Аллергены</div>
+                <div id="flashcard-allergens" class="flashcard-allergens"></div>
+              </div>
+              <button id="flip-back-btn" class="flip-btn">
+                <span class="flip-icon">↻</span>
+                <span>Перевернуть</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flashcards-hint">
+          <span>Свайп вправо → ЗНАЮ</span>
+          <span>Свайп влево ← НЕ ЗНАЮ</span>
+        </div>
+      </div>
+      
+      <div class="flashcards-actions">
+        <button id="know-btn" class="action-btn know-btn">✅ ЗНАЮ</button>
+        <button id="dont-know-btn" class="action-btn dont-know-btn">❌ НЕ ЗНАЮ</button>
+      </div>
+    `;
+    
+    const flashcard = wrapper.querySelector('#flashcard');
+    const flashcardInner = flashcard.querySelector('.flashcard-inner');
+    const flipBtn = wrapper.querySelector('#flip-btn');
+    const flipBackBtn = wrapper.querySelector('#flip-back-btn');
+    const knowBtn = wrapper.querySelector('#know-btn');
+    const dontKnowBtn = wrapper.querySelector('#dont-know-btn');
+    const progressFill = wrapper.querySelector('#flashcards-progress-fill');
+    
+    // Load drinks
+    loadDb().then(({dishes: allDishes}) => {
+      if (isAllBar) {
+        drinks = allDishes.filter(d => d.source === 'bar');
+      } else if (categoryName) {
+        drinks = allDishes.filter(d => 
+          d.source === 'bar' &&
+          d.category === decodeURIComponent(categoryName)
+        );
+      }
+      
+      if (drinks.length === 0) {
+        wrapper.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #ffffff;">
+            <p>Напитки не найдены</p>
+            <button id="btn-back-bar-flashcards" class="back-btn" style="margin-top: 20px;">← Назад</button>
+          </div>
+        `;
+        wrapper.querySelector('#btn-back-bar-flashcards')?.addEventListener('click', () => navigate('#/learn/bar'));
+        return;
+      }
+      
+      // Shuffle drinks
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+      drinks = shuffle(drinks);
+      
+      renderCard();
+    });
+    
+    function renderCard() {
+      if (currentIndex >= drinks.length) {
+        wrapper.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #ffffff;">
+            <h2>🎉 Готово!</h2>
+            <p>Вы изучили все напитки (${drinks.length})</p>
+            <button id="btn-back-bar-flashcards" class="back-btn" style="margin-top: 20px;">← Назад</button>
+          </div>
+        `;
+        wrapper.querySelector('#btn-back-bar-flashcards')?.addEventListener('click', () => navigate('#/learn/bar'));
+        return;
+      }
+      
+      const drink = drinks[currentIndex];
+      isFlipped = false;
+      flashcardInner.style.transform = 'rotateY(0deg)';
+      
+      // Update progress
+      const progress = ((currentIndex) / drinks.length) * 100;
+      progressFill.style.width = `${progress}%`;
+      
+      // Front side
+      const nameEl = wrapper.querySelector('.flashcard-name');
+      const categoryTagEl = wrapper.querySelector('.flashcard-category-tag');
+      const imageEl = wrapper.querySelector('#flashcard-image');
+      const placeholderEl = wrapper.querySelector('.flashcard-image-placeholder');
+      
+      nameEl.textContent = drink.name || 'Без названия';
+      categoryTagEl.textContent = drink.category || 'Без категории';
+      
+      if (drink.image && drink.image !== '-' && drink.image !== './images/-.jpg') {
+        imageEl.src = drink.image;
+        imageEl.style.display = 'block';
+        placeholderEl.style.display = 'none';
+        imageEl.onerror = () => {
+          imageEl.style.display = 'none';
+          placeholderEl.style.display = 'flex';
+        };
+      } else {
+        imageEl.style.display = 'none';
+        placeholderEl.style.display = 'flex';
+      }
+      
+      // Back side
+      const compositionEl = wrapper.querySelector('#flashcard-composition');
+      const allergensEl = wrapper.querySelector('#flashcard-allergens');
+      
+      if (drink.composition && Array.isArray(drink.composition) && drink.composition.length && drink.composition[0] !== '-') {
+        compositionEl.textContent = drink.composition.join(', ');
+      } else {
+        compositionEl.textContent = 'Не указано';
+      }
+      
+      if (drink.allergens && Array.isArray(drink.allergens) && drink.allergens.length && drink.allergens[0] !== '-') {
+        allergensEl.textContent = drink.allergens.join(', ');
+      } else {
+        allergensEl.textContent = 'Не указано';
+      }
+    }
+    
+    function flipCard() {
+      isFlipped = !isFlipped;
+      flashcardInner.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+    }
+    
+    function markAsKnown() {
+      const drink = drinks[currentIndex];
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      learningProgress[`bar_${drink.name}`] = { known: true, timestamp: Date.now() };
+      localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress));
+      
+      currentIndex++;
+      renderCard();
+    }
+    
+    function markAsUnknown() {
+      const drink = drinks[currentIndex];
+      let learningProgress = {};
+      try {
+        learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}');
+      } catch {}
+      learningProgress[`bar_${drink.name}`] = { known: false, timestamp: Date.now() };
+      localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress));
+      
+      currentIndex++;
+      renderCard();
+    }
+    
+    // Touch/swipe handlers
+    flashcard.addEventListener('touchstart', (e) => {
+      if (isFlipped) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      currentX = 0;
+      currentY = 0;
+    });
+    
+    flashcard.addEventListener('touchmove', (e) => {
+      if (!isDragging || isFlipped) return;
+      currentX = e.touches[0].clientX - startX;
+      currentY = e.touches[0].clientY - startY;
+      
+      const rotate = currentX * 0.1;
+      const opacity = 1 - Math.abs(currentX) / 200;
+      
+      flashcard.style.transform = `translateX(${currentX}px) rotateZ(${rotate}deg)`;
+      flashcard.style.opacity = Math.max(0.3, opacity);
+    });
+    
+    flashcard.addEventListener('touchend', (e) => {
+      if (!isDragging || isFlipped) return;
+      isDragging = false;
+      
+      const threshold = 100;
+      if (Math.abs(currentX) > threshold) {
+        if (currentX > 0) {
+          // Swipe right - KNOW
+          flashcard.style.transform = 'translateX(500px) rotateZ(30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsKnown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        } else {
+          // Swipe left - DON'T KNOW
+          flashcard.style.transform = 'translateX(-500px) rotateZ(-30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsUnknown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        }
+      } else {
+        // Return to original position
+        flashcard.style.transform = '';
+        flashcard.style.opacity = '1';
+      }
+    });
+    
+    // Mouse drag handlers (for desktop testing)
+    flashcard.addEventListener('mousedown', (e) => {
+      if (isFlipped) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      isDragging = true;
+      currentX = 0;
+      currentY = 0;
+      flashcard.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging || isFlipped) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      
+      const rotate = currentX * 0.1;
+      const opacity = 1 - Math.abs(currentX) / 200;
+      
+      flashcard.style.transform = `translateX(${currentX}px) rotateZ(${rotate}deg)`;
+      flashcard.style.opacity = Math.max(0.3, opacity);
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (!isDragging || isFlipped) return;
+      isDragging = false;
+      flashcard.style.cursor = '';
+      
+      const threshold = 100;
+      if (Math.abs(currentX) > threshold) {
+        if (currentX > 0) {
+          flashcard.style.transform = 'translateX(500px) rotateZ(30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsKnown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        } else {
+          flashcard.style.transform = 'translateX(-500px) rotateZ(-30deg)';
+          flashcard.style.opacity = '0';
+          setTimeout(() => {
+            markAsUnknown();
+            flashcard.style.transform = '';
+            flashcard.style.opacity = '1';
+          }, 300);
+        }
+      } else {
+        flashcard.style.transform = '';
+        flashcard.style.opacity = '1';
+      }
+    });
+    
+    flipBtn.addEventListener('click', flipCard);
+    flipBackBtn.addEventListener('click', flipCard);
+    knowBtn.addEventListener('click', markAsKnown);
+    dontKnowBtn.addEventListener('click', markAsUnknown);
+    
+    wrapper.querySelector('#btn-back-bar-flashcards')?.addEventListener('click', () => navigate('#/learn/bar'));
     
     return wrapper;
   }

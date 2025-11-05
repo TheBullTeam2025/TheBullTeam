@@ -656,6 +656,17 @@ body:has(.learn-page) .app-header {
   justify-content: center;
 }
 
+.nav-icon svg {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+}
+
+.nav-icon-bull svg {
+  width: 28px;
+  height: 28px;
+}
+
 .nav-icon img {
   width: 24px;
   height: 24px;
@@ -667,6 +678,21 @@ body:has(.learn-page) .app-header {
 .nav-item.active .nav-icon img {
   opacity: 1;
   filter: brightness(1.2);
+}
+
+.nav-item.active .nav-icon-bull svg {
+  fill: #ef4444;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)) drop-shadow(0 0 12px rgba(239, 68, 68, 0.6)) drop-shadow(0 0 16px rgba(239, 68, 68, 0.4));
+  animation: neonGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes neonGlow {
+  from {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)) drop-shadow(0 0 10px rgba(239, 68, 68, 0.6)) drop-shadow(0 0 14px rgba(239, 68, 68, 0.4));
+  }
+  to {
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)) drop-shadow(0 0 16px rgba(239, 68, 68, 0.8)) drop-shadow(0 0 20px rgba(239, 68, 68, 0.6));
+  }
 }
 
 /* Adjust main content for bottom nav */
