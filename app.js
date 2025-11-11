@@ -164,6 +164,12 @@
     };
   }
 
+  // Helper function for gamification - get stars based on progress
+  function getStars(progress) {
+    const stars = Math.floor(progress / 20);
+    return '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
+  }
+
   function calculateCategoryProgress(categoryId) {
     if (!window.TRAINING_DATA) return 0;
     
@@ -556,7 +562,8 @@
       // For enabled categories (sortGroup < 1000), sort by status and time
       if (aSortGroup < 1000) {
         if ((a._statusRank || 0) !== (b._statusRank || 0)) {
-          return (a._statusRank || 0) - (b._statusRank || 0);
+          // Reverse sort: items with status (rkeeper/served) go to bottom
+          return (b._statusRank || 0) - (a._statusRank || 0);
         }
         // Enabled: newest first
         return (b.addedAt || 0) - (a.addedAt || 0);
@@ -1303,182 +1310,137 @@
     if (hash.startsWith('#/learn/flashcards/')) return viewFlashcards();
     if (hash.startsWith('#/learn/tests/')) return viewTests();
     
-    // Main learning page with new design
+    // Main learning page - gamified with circular progress and level system
     const wrapper = document.createElement('div');
-    wrapper.className = 'page learn-page';
+    wrapper.className = 'page learn-page learn-page-gamified';
     
-    const levelInfo = getLevelInfo();
-    const overallProgress = calculateOverallProgress();
-    
-    // Calculate category progress
-    const menuProgress = calculateCategoryProgress('menu');
-    const barProgress = calculateCategoryProgress('bar');
-    const theoryProgress = calculateCategoryProgress('theory');
-    const stepsProgress = calculateCategoryProgress('steps');
-    
-    // Module progress
+    // Calculate module progress
     const dishesProgress = calculateModuleProgress('dishes');
     const barStudyProgress = calculateModuleProgress('bar-study');
     const theoryModuleProgress = calculateModuleProgress('theory');
     const serviceStepsProgress = calculateModuleProgress('service-steps');
-    
-    // Get user profile for avatar
-    const userName = (profile.surname && profile.name) ? `${profile.surname} ${profile.name}` : (profile.name || profile.surname || 'Пользователь');
-    const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'П';
+    const overallProgress = calculateOverallProgress();
+    const levelInfo = getLevelInfo();
     
     wrapper.innerHTML = `
-      <!-- Header with profile and settings -->
+      <!-- Header -->
       <div class="learn-header">
-        <div class="learn-profile-avatar" id="learn-profile-btn">
-          <div class="avatar-circle">${userInitials}</div>
-        </div>
         <h1 class="learn-page-title">Изучение</h1>
-        <button class="learn-settings-btn" id="learn-settings-btn">⚙️</button>
       </div>
       
-      <!-- Overall Learning Progress Circle -->
-      <div class="learn-overall-progress">
-        <svg class="circular-progress" viewBox="0 0 120 120">
+      <!-- Overall Progress Circle (Gamified) -->
+      <div class="learn-overall-progress-gamified">
+        <svg class="circular-progress-gamified" viewBox="0 0 120 120">
           <defs>
-            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:#c00000;stop-opacity:1" />
-              <stop offset="100%" style="stop-color:#902229;stop-opacity:1" />
+            <linearGradient id="progressGradientGamified" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:var(--primary);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:var(--ring);stop-opacity:1" />
             </linearGradient>
           </defs>
-          <circle class="progress-track" cx="60" cy="60" r="54" fill="none" stroke="#2a2a2a" stroke-width="8"/>
-          <circle class="progress-bar" cx="60" cy="60" r="54" fill="none" 
-                  stroke="url(#progressGradient)" stroke-width="8" stroke-linecap="round"
+          <circle class="progress-track-gamified" cx="60" cy="60" r="54" fill="none" stroke="var(--muted)" stroke-width="8"/>
+          <circle class="progress-bar-gamified" cx="60" cy="60" r="54" fill="none" 
+                  stroke="url(#progressGradientGamified)" stroke-width="8" stroke-linecap="round"
                   stroke-dasharray="${Math.PI * 108}" 
                   stroke-dashoffset="${Math.PI * 108 * (1 - overallProgress / 100)}"
                   transform="rotate(-90 60 60)"/>
         </svg>
-        <div class="circular-progress-text">
-          <div class="progress-label-top">Общий</div>
-          <div class="progress-label-middle">прогресс</div>
-          <div class="progress-label-bottom">обучения</div>
+        <div class="circular-progress-text-gamified">
+          <div class="progress-percent-large">${overallProgress}%</div>
+          <div class="progress-label-small">Общий прогресс</div>
         </div>
       </div>
       
-      <!-- Individual Category Progress -->
-      <div class="learn-category-progress">
-        <div class="category-progress-item" data-category="menu">
-          <div class="category-progress-header">
-            <span class="category-name">Меню</span>
-            <span class="category-percent">${menuProgress}%</span>
-          </div>
-          <div class="category-progress-bar">
-            <div class="category-progress-fill" style="width: ${menuProgress}%"></div>
+      <!-- Level & XP Card (Gamified) -->
+      <div class="learn-level-card-gamified">
+        <div class="level-badge-gamified">
+          <div class="level-icon">🏆</div>
+          <div class="level-info-gamified">
+            <div class="level-number-gamified">Level ${levelInfo.level}</div>
+            <div class="level-title-gamified">${levelInfo.title}</div>
           </div>
         </div>
-        
-        <div class="category-progress-item" data-category="bar">
-          <div class="category-progress-header">
-            <span class="category-name">Бар</span>
-            <span class="category-percent">${barProgress}%</span>
-          </div>
-          <div class="category-progress-bar">
-            <div class="category-progress-fill" style="width: ${barProgress}%"></div>
-          </div>
-        </div>
-        
-        <div class="category-progress-item" data-category="theory">
-          <div class="category-progress-header">
-            <span class="category-name">Теория</span>
-            <span class="category-percent">${theoryProgress}%</span>
-          </div>
-          <div class="category-progress-bar">
-            <div class="category-progress-fill" style="width: ${theoryProgress}%"></div>
-          </div>
-        </div>
-        
-        <div class="category-progress-item" data-category="steps">
-          <div class="category-progress-header">
-            <span class="category-name">6 шагов сервиса</span>
-            <span class="category-percent">${stepsProgress}%</span>
-          </div>
-          <div class="category-progress-bar">
-            <div class="category-progress-fill" style="width: ${stepsProgress}%"></div>
+        <div class="xp-progress-container">
+          <div class="xp-text">${levelInfo.xp} / ${levelInfo.xpForNext} XP</div>
+          <div class="xp-progress-bar-gamified">
+            <div class="xp-progress-fill-gamified" style="width: ${levelInfo.progress}%"></div>
           </div>
         </div>
       </div>
       
-      <!-- Current Achievement Level -->
-      <div class="learn-achievement">
-        <span class="achievement-icon">🏆</span>
-        <span class="achievement-text">Level ${levelInfo.level} - ${levelInfo.achievementTitle}</span>
-      </div>
-      
-      <!-- Learning Module Cards Grid 2x2 -->
-      <div class="learn-modules-grid">
-        <div class="learn-module-card" data-module="dishes">
-          <div class="card-top">
-            <span class="module-icon">🍽️</span>
-            <span class="module-title">Изучение блюд</span>
+      <!-- Learning Module Cards Grid 2x2 with Circular Progress -->
+      <div class="learn-modules-grid-gamified">
+        <div class="learn-module-card-gamified" data-module="dishes" data-progress="${dishesProgress}">
+          <div class="module-circular-progress-wrapper">
+            <svg class="module-circular-progress" viewBox="0 0 80 80">
+              <circle class="module-progress-track" cx="40" cy="40" r="34" fill="none" stroke="var(--muted)" stroke-width="6"/>
+              <circle class="module-progress-bar" cx="40" cy="40" r="34" fill="none" 
+                      stroke="var(--primary)" stroke-width="6" stroke-linecap="round"
+                      stroke-dasharray="${Math.PI * 68}" 
+                      stroke-dashoffset="${Math.PI * 68 * (1 - dishesProgress / 100)}"
+                      transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="module-progress-percent">${dishesProgress}%</div>
           </div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${dishesProgress}%"></div>
-          </div>
+          <span class="module-icon-gamified">🍽️</span>
+          <span class="module-title-gamified">Изучение блюд</span>
+          <div class="module-stars">${getStars(dishesProgress)}</div>
         </div>
         
-        <div class="learn-module-card" data-module="bar-study">
-          <div class="card-top">
-            <span class="module-icon">🍷</span>
-            <span class="module-title">Изучение бара</span>
+        <div class="learn-module-card-gamified" data-module="bar-study" data-progress="${barStudyProgress}">
+          <div class="module-circular-progress-wrapper">
+            <svg class="module-circular-progress" viewBox="0 0 80 80">
+              <circle class="module-progress-track" cx="40" cy="40" r="34" fill="none" stroke="var(--muted)" stroke-width="6"/>
+              <circle class="module-progress-bar" cx="40" cy="40" r="34" fill="none" 
+                      stroke="var(--primary)" stroke-width="6" stroke-linecap="round"
+                      stroke-dasharray="${Math.PI * 68}" 
+                      stroke-dashoffset="${Math.PI * 68 * (1 - barStudyProgress / 100)}"
+                      transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="module-progress-percent">${barStudyProgress}%</div>
           </div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${barStudyProgress}%"></div>
-          </div>
+          <span class="module-icon-gamified">🍷</span>
+          <span class="module-title-gamified">Изучение бара</span>
+          <div class="module-stars">${getStars(barStudyProgress)}</div>
         </div>
         
-        <div class="learn-module-card" data-module="theory">
-          <div class="card-top">
-            <span class="module-icon">📖</span>
-            <span class="module-title">Теория</span>
+        <div class="learn-module-card-gamified" data-module="theory" data-progress="${theoryModuleProgress}">
+          <div class="module-circular-progress-wrapper">
+            <svg class="module-circular-progress" viewBox="0 0 80 80">
+              <circle class="module-progress-track" cx="40" cy="40" r="34" fill="none" stroke="var(--muted)" stroke-width="6"/>
+              <circle class="module-progress-bar" cx="40" cy="40" r="34" fill="none" 
+                      stroke="var(--primary)" stroke-width="6" stroke-linecap="round"
+                      stroke-dasharray="${Math.PI * 68}" 
+                      stroke-dashoffset="${Math.PI * 68 * (1 - theoryModuleProgress / 100)}"
+                      transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="module-progress-percent">${theoryModuleProgress}%</div>
           </div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${theoryModuleProgress}%"></div>
-          </div>
+          <span class="module-icon-gamified">📖</span>
+          <span class="module-title-gamified">Теория</span>
+          <div class="module-stars">${getStars(theoryModuleProgress)}</div>
         </div>
         
-        <div class="learn-module-card" data-module="service-steps">
-          <div class="card-top">
-            <span class="module-icon">🤝</span>
-            <span class="module-title">6 шагов сервиса</span>
+        <div class="learn-module-card-gamified" data-module="service-steps" data-progress="${serviceStepsProgress}">
+          <div class="module-circular-progress-wrapper">
+            <svg class="module-circular-progress" viewBox="0 0 80 80">
+              <circle class="module-progress-track" cx="40" cy="40" r="34" fill="none" stroke="var(--muted)" stroke-width="6"/>
+              <circle class="module-progress-bar" cx="40" cy="40" r="34" fill="none" 
+                      stroke="var(--primary)" stroke-width="6" stroke-linecap="round"
+                      stroke-dasharray="${Math.PI * 68}" 
+                      stroke-dashoffset="${Math.PI * 68 * (1 - serviceStepsProgress / 100)}"
+                      transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="module-progress-percent">${serviceStepsProgress}%</div>
           </div>
-          <div class="module-progress-bar">
-            <div class="module-progress-fill" style="width: ${serviceStepsProgress}%"></div>
-          </div>
+          <span class="module-icon-gamified">🤝</span>
+          <span class="module-title-gamified">6 шагов сервиса</span>
+          <div class="module-stars">${getStars(serviceStepsProgress)}</div>
         </div>
       </div>
     `;
     
-    // Event listeners for header
-    wrapper.querySelector('#learn-profile-btn')?.addEventListener('click', () => {
-      navigate('#/profile');
-    });
-    
-    wrapper.querySelector('#learn-settings-btn')?.addEventListener('click', () => {
-      navigate('#/settings');
-    });
-    
-    // Category progress items - navigate to respective sections
-    wrapper.querySelectorAll('.category-progress-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const category = item.dataset.category;
-        if (category === 'menu') {
-          navigate('#/learn/menu');
-        } else if (category === 'bar') {
-          navigate('#/learn/bar');
-        } else if (category === 'theory') {
-          navigate('#/learn/theory');
-        } else if (category === 'steps') {
-          navigate('#/learn/steps');
-        }
-      });
-    });
-    
     // Module cards - navigate to learning modules
-    wrapper.querySelectorAll('.learn-module-card').forEach(card => {
+    wrapper.querySelectorAll('.learn-module-card-gamified').forEach(card => {
       card.addEventListener('click', () => {
         const module = card.dataset.module;
         if (module === 'dishes') {
@@ -1493,10 +1455,31 @@
       });
     });
     
-    // Achievement level - could show detailed info (optional)
-    wrapper.querySelector('.learn-achievement')?.addEventListener('click', () => {
-      // Could show modal with level details, requirements, etc.
-      // For now, just visual
+    // Prevent scrolling on the page, but allow scrolling in modules grid
+    wrapper.addEventListener('touchmove', (e) => {
+      const modulesGrid = wrapper.querySelector('.learn-modules-grid-gamified');
+      if (modulesGrid && modulesGrid.contains(e.target)) {
+        // Allow scrolling in modules grid
+        return;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    
+    wrapper.addEventListener('wheel', (e) => {
+      const modulesGrid = wrapper.querySelector('.learn-modules-grid-gamified');
+      if (modulesGrid && modulesGrid.contains(e.target)) {
+        // Allow scrolling in modules grid
+        return;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    
+    // Add glow effect for completed modules (100%)
+    wrapper.querySelectorAll('.learn-module-card-gamified').forEach(card => {
+      const progress = parseInt(card.dataset.progress || '0');
+      if (progress === 100) {
+        card.classList.add('module-completed');
+      }
     });
     
     return wrapper;
@@ -3032,6 +3015,35 @@
           'Удалить стол',
           message,
           () => {
+            // Save table orders to history before removing table
+            if (tableOrders[n] && tableOrders[n].length > 0) {
+              try {
+                const items = Array.isArray(tableOrders[n]) ? tableOrders[n] : [];
+                const total = computeItemsTotal(items);
+                const snapshot = {
+                  table: n,
+                  tableName: getTableDisplayName(n),
+                  items: items.map(i => ({
+                    id: i.id,
+                    itemName: i.itemName || i.name || i.Name || '',
+                    quantity: i.quantity || 1,
+                    price: parsePriceToNumber(i.calculatedPrice) || parsePriceToNumber(i.price),
+                    priceLabel: i.calculatedPrice || i.price || '',
+                    rkeeper: i.rkeeper || i.R_keeper || i.R_keeaper || '—'
+                  })),
+                  total,
+                  createdAt: items.length ? Math.min(...items.map(i => i.addedAt || Date.now())) : Date.now(),
+                  updatedAt: Date.now(),
+                  closedAt: Date.now(),
+                  status: 'closed'
+                };
+                orderHistory.push(snapshot);
+                saveOrderHistory();
+              } catch (err) {
+                console.error('Error saving order to history:', err);
+              }
+            }
+            
             // Remove table and all its orders
             activeTables = activeTables.filter(t => t !== n);
             delete tableOrders[n];
@@ -4590,7 +4602,7 @@
           // Set new status
           order.status = status;
         }
-        saveTableOrders();
+        sortTableOrdersByCategory(tableNumber);
         renderTodoList();
       }
     }
