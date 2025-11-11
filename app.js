@@ -15,7 +15,8 @@
     learningProgress: 'waiter.learningProgress',
     learningLevel: 'waiter.learningLevel',
     learningXP: 'waiter.learningXP',
-    shifts: 'waiter.shifts'
+    shifts: 'waiter.shifts',
+    darkMode: 'waiter.darkMode'
   };
 
 
@@ -29,7 +30,7 @@
   let orderHistory = [];
   /** @type {{ lastPurgeMonth?: string } } */
   let meta = {};
-  /** @type {{ name?: string, role?: string, grade?: string, location?: string }} */
+  /** @type {{ name?: string, surname?: string, role?: string, grade?: string, location?: string }} */
   let profile = {};
   /** @type {Object<string, number>} - shifts: { "2025-06-05": 1, "2025-06-13": 0.5 } */
   let shifts = {};
@@ -85,6 +86,14 @@
     try { learningProgress = JSON.parse(localStorage.getItem(STORAGE_KEYS.learningProgress) || '{}'); } catch { learningProgress = {}; }
     try { learningLevel = parseInt(localStorage.getItem(STORAGE_KEYS.learningLevel) || '1') || 1; } catch { learningLevel = 1; }
     try { learningXP = parseInt(localStorage.getItem(STORAGE_KEYS.learningXP) || '0') || 0; } catch { learningXP = 0; }
+    
+    // Load dark mode
+    try {
+      const darkMode = localStorage.getItem(STORAGE_KEYS.darkMode) === 'true';
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch {}
   }
 
   function saveTableOrders() { localStorage.setItem(STORAGE_KEYS.tableOrders, JSON.stringify(tableOrders)); }
@@ -99,6 +108,7 @@
   function saveLearningProgress() { localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress)); }
   function saveLearningLevel() { localStorage.setItem(STORAGE_KEYS.learningLevel, learningLevel.toString()); }
   function saveLearningXP() { localStorage.setItem(STORAGE_KEYS.learningXP, learningXP.toString()); }
+  function saveDarkMode(enabled) { localStorage.setItem(STORAGE_KEYS.darkMode, enabled ? 'true' : 'false'); }
 
   function normalizeCategoryGrouping() {
     Object.keys(CATEGORY_KEYS).forEach((key) => {
@@ -1313,7 +1323,7 @@
     const serviceStepsProgress = calculateModuleProgress('service-steps');
     
     // Get user profile for avatar
-    const userName = profile.name || 'Пользователь';
+    const userName = (profile.surname && profile.name) ? `${profile.surname} ${profile.name}` : (profile.name || profile.surname || 'Пользователь');
     const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'П';
     
     wrapper.innerHTML = `
@@ -3765,6 +3775,12 @@
     if (hash.startsWith('#/table/')) {
       const id = Number(hash.split('/').pop());
       root.appendChild(viewTable(id));
+    } else if (hash === '#/course-settings') {
+      root.appendChild(viewCourseSettings());
+    } else if (hash === '#/order-history') {
+      root.appendChild(viewOrderHistory());
+    } else if (hash === '#/about') {
+      root.appendChild(viewAbout());
     } else {
       // Show current page based on navigation
       switch (currentPage) {
@@ -4662,6 +4678,8 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'page';
 
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     const panel = document.createElement('section');
     panel.className = 'panel';
     panel.innerHTML = `
@@ -4670,20 +4688,80 @@
       </div>
       
       <div class="settings-section">
-        <h3>Приложение</h3>
+        <div class="settings-item settings-item-clickable" id="dark-mode-toggle">
+          <div class="settings-item-label">Тёмная тема</div>
+          <div class="settings-toggle ${isDarkMode ? 'active' : ''}" id="dark-mode-switch"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-item settings-item-clickable" id="course-settings-btn">
+          <div class="settings-item-label">Настройка курсов</div>
+          <div class="settings-item-arrow">›</div>
+        </div>
+        <div class="settings-item settings-item-clickable" id="order-history-btn">
+          <div class="settings-item-label">История заказов</div>
+          <div class="settings-item-arrow">›</div>
+        </div>
+        <div class="settings-item settings-item-clickable" id="about-app-btn">
+          <div class="settings-item-label">О приложении</div>
+          <div class="settings-item-arrow">›</div>
+        </div>
+      </div>
+    `;
+
+    wrapper.appendChild(panel);
+
+    // Dark mode toggle
+    const darkModeToggle = wrapper.querySelector('#dark-mode-toggle');
+    const darkModeSwitch = wrapper.querySelector('#dark-mode-switch');
+    darkModeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      darkModeSwitch.classList.toggle('active', isDark);
+      saveDarkMode(isDark);
+    });
+
+    // Course settings button
+    wrapper.querySelector('#course-settings-btn').addEventListener('click', () => {
+      navigate('#/course-settings');
+    });
+
+    // Order history button
+    wrapper.querySelector('#order-history-btn').addEventListener('click', () => {
+      navigate('#/order-history');
+    });
+
+    // About app button
+    wrapper.querySelector('#about-app-btn').addEventListener('click', () => {
+      navigate('#/about');
+    });
+
+    return wrapper;
+  }
+
+  // About app page
+  function viewAbout() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+
+    const panel = document.createElement('section');
+    panel.className = 'panel';
+    panel.innerHTML = `
+      <div class="panel-header">
+        <button class="back-btn" id="about-back">‹</button>
+        <h2 style="flex: 1; text-align: center; margin: 0;">О приложении</h2>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="settings-section">
         <div class="settings-item">
           <div class="settings-item-label">Версия</div>
           <div class="settings-item-value">${getAppVersion()}</div>
         </div>
         
         <div class="settings-item">
-          <div class="settings-item-label">Всего столов</div>
-          <div class="settings-item-value">${activeTables.length}</div>
-        </div>
-        
-        <div class="settings-item">
-          <div class="settings-item-label">Всего заказов</div>
-          <div class="settings-item-value">${Object.values(tableOrders).reduce((sum, orders) => sum + (orders ? orders.length : 0), 0)}</div>
+          <div class="settings-item-label">BullTeam PWA</div>
+          <div class="settings-item-value">Система управления заказами</div>
         </div>
       </div>
 
@@ -4705,85 +4783,14 @@
           <button id="reset-app-btn" class="btn danger">Сбросить приложение</button>
         </div>
       </div>
-
-      <div class="settings-section">
-        <h3>Группировка блюд</h3>
-        <div class="settings-item">
-          <div class="settings-item-label">Напитки</div>
-          <div class="settings-toggle ${categoryGrouping.drinks ? 'active' : ''}" data-category-toggle="drinks"></div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-label">Холодные блюда</div>
-          <div class="settings-toggle ${categoryGrouping.cold ? 'active' : ''}" data-category-toggle="cold"></div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-label">Горячие блюда</div>
-          <div class="settings-toggle ${categoryGrouping.hot ? 'active' : ''}" data-category-toggle="hot"></div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-label">Десерты</div>
-          <div class="settings-toggle ${categoryGrouping.dessert ? 'active' : ''}" data-category-toggle="dessert"></div>
-        </div>
-        <div class="settings-item">
-          <button id="show-grouping-state-btn" class="btn secondary" style="width:100%;">Показать состояние</button>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3>Информация</h3>
-        <div class="settings-item">
-          <div class="settings-item-label">BullTeam PWA</div>
-          <div class="settings-item-value">Система управления заказами</div>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3>История заказов</h3>
-        <div class="settings-item">
-          <input id="history-search" class="filter-input" placeholder="Поиск по названию стола или блюду" />
-        </div>
-        <div id="history-list" class="history-list"></div>
-      </div>
     `;
 
     wrapper.appendChild(panel);
-    // Render order history
-    const historySearch = wrapper.querySelector('#history-search');
-    const historyList = wrapper.querySelector('#history-list');
-    function renderHistory(filter = '') {
-      const norm = (filter || '').toLowerCase().trim();
-      const items = (orderHistory || []).slice().sort((a,b) => (b.closedAt||0) - (a.closedAt||0));
-      const filtered = items.filter(h => {
-        if (!norm) return true;
-        const t = `${h.tableName || ''} ${h.table}`.toLowerCase();
-        const hasDish = (h.items || []).some(i => (i.itemName || '').toLowerCase().includes(norm));
-        return t.includes(norm) || hasDish;
-      });
-      const subset = filtered.slice(0, 20);
-      historyList.innerHTML = subset.length ? '' : '<div style="color: var(--muted);">Пока нет записей</div>';
-      subset.forEach(h => {
-        const row = document.createElement('div');
-        row.className = 'history-row';
-        const dt = h.closedAt || h.updatedAt || h.createdAt || Date.now();
-        const d = new Date(dt);
-        row.innerHTML = `
-          <div class="history-card">
-            <div class="history-row-main">
-              <div class="history-title">${h.tableName || ('Стол ' + h.table)}</div>
-              <div class="history-meta">${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
-              <div class="history-total">${h.total || 0} ₽</div>
-            </div>
-            <div class="history-items" style="display:none;">${(h.items||[]).map(i => `${i.itemName} ×${i.quantity}`).join(', ') || '—'}</div>
-          </div>`;
-        row.addEventListener('click', () => {
-          const el = row.querySelector('.history-items');
-          el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        });
-        historyList.appendChild(row);
-      });
-    }
-    renderHistory('');
-    historySearch.addEventListener('input', (e) => renderHistory(e.target.value));
+
+    // Back button
+    wrapper.querySelector('#about-back').addEventListener('click', () => {
+      navigate('#/settings');
+    });
 
     // Event handlers
     wrapper.querySelector('#clear-cache-btn').addEventListener('click', () => {
@@ -4871,6 +4878,52 @@
       );
     });
 
+    return wrapper;
+  }
+
+  // Course settings page
+  function viewCourseSettings() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+
+    const panel = document.createElement('section');
+    panel.className = 'panel';
+    panel.innerHTML = `
+      <div class="panel-header">
+        <button class="back-btn" id="course-settings-back">‹</button>
+        <h2 style="flex: 1; text-align: center; margin: 0;">Настройка курсов</h2>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="settings-section">
+        <h3>Группировка блюд</h3>
+        <div class="settings-item">
+          <div class="settings-item-label">Напитки</div>
+          <div class="settings-toggle ${categoryGrouping.drinks ? 'active' : ''}" data-category-toggle="drinks"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Холодные блюда</div>
+          <div class="settings-toggle ${categoryGrouping.cold ? 'active' : ''}" data-category-toggle="cold"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Горячие блюда</div>
+          <div class="settings-toggle ${categoryGrouping.hot ? 'active' : ''}" data-category-toggle="hot"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-label">Десерты</div>
+          <div class="settings-toggle ${categoryGrouping.dessert ? 'active' : ''}" data-category-toggle="dessert"></div>
+        </div>
+      </div>
+    `;
+
+    wrapper.appendChild(panel);
+
+    // Back button
+    wrapper.querySelector('#course-settings-back').addEventListener('click', () => {
+      navigate('#/settings');
+    });
+
+    // Category toggles
     wrapper.querySelectorAll('[data-category-toggle]').forEach(toggle => {
       const key = toggle.dataset.categoryToggle;
       toggle.addEventListener('click', () => {
@@ -4880,20 +4933,107 @@
         toggle.classList.toggle('active', nextValue);
         saveCategoryGrouping();
         reapplyCategoryGroupingToAllTables();
-        // Don't re-render settings page to avoid losing event listeners
-        // The visual state is already updated via classList.toggle above
       });
     });
     
-    // Show grouping state button
-    wrapper.querySelector('#show-grouping-state-btn')?.addEventListener('click', () => {
-      const state = Object.entries(categoryGrouping).map(([key, val]) => {
-        const label = {drinks: 'Напитки', cold: 'Холодные', hot: 'Горячие', dessert: 'Десерты'}[key];
-        return `${label}: ${val ? '✅ ВКЛ' : '❌ ВЫКЛ'}`;
-      }).join('\n');
-      const stored = localStorage.getItem('waiter.categoryGrouping');
-      alert(`Текущее состояние курсов:\n\n${state}\n\nВ localStorage:\n${stored || 'не сохранено'}`);
+    return wrapper;
+  }
+
+  // Order history page
+  function viewOrderHistory() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page';
+
+    const panel = document.createElement('section');
+    panel.className = 'panel';
+    panel.innerHTML = `
+      <div class="panel-header">
+        <button class="back-btn" id="order-history-back">‹</button>
+        <h2 style="flex: 1; text-align: center; margin: 0;">История заказов</h2>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="settings-section" style="padding-top: 0;">
+        <div class="settings-item">
+          <input id="history-search" class="filter-input" placeholder="Поиск по названию стола или блюду" />
+        </div>
+      </div>
+      
+      <div id="history-list" class="order-history-list"></div>
+    `;
+
+    wrapper.appendChild(panel);
+
+    // Back button
+    wrapper.querySelector('#order-history-back').addEventListener('click', () => {
+      navigate('#/settings');
     });
+
+    // Render order history grouped by date
+    const historySearch = wrapper.querySelector('#history-search');
+    const historyList = wrapper.querySelector('#history-list');
+    
+    function renderHistory(filter = '') {
+      const norm = (filter || '').toLowerCase().trim();
+      const items = (orderHistory || []).slice().sort((a,b) => (b.closedAt||0) - (a.closedAt||0));
+      const filtered = items.filter(h => {
+        if (!norm) return true;
+        const t = `${h.tableName || ''} ${h.table}`.toLowerCase();
+        const hasDish = (h.items || []).some(i => (i.itemName || '').toLowerCase().includes(norm));
+        return t.includes(norm) || hasDish;
+      });
+
+      if (filtered.length === 0) {
+        historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted-foreground);">Пока нет записей</div>';
+        return;
+      }
+
+      // Group by date
+      const groupedByDate = {};
+      filtered.forEach(h => {
+        const dt = h.closedAt || h.updatedAt || h.createdAt || Date.now();
+        const d = new Date(dt);
+        const dateKey = d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        
+        if (!groupedByDate[dateKey]) {
+          groupedByDate[dateKey] = [];
+        }
+        groupedByDate[dateKey].push(h);
+      });
+
+      historyList.innerHTML = '';
+      
+      Object.entries(groupedByDate).forEach(([dateKey, orders]) => {
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'order-history-date-header';
+        dateHeader.textContent = dateKey;
+        historyList.appendChild(dateHeader);
+
+        orders.forEach(h => {
+          const row = document.createElement('div');
+          row.className = 'history-row';
+          const dt = h.closedAt || h.updatedAt || h.createdAt || Date.now();
+          const d = new Date(dt);
+          row.innerHTML = `
+            <div class="history-card">
+              <div class="history-row-main">
+                <div class="history-title">${h.tableName || ('Стол ' + h.table)}</div>
+                <div class="history-meta">${d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>
+                <div class="history-total">${h.total || 0} ₽</div>
+              </div>
+              <div class="history-items" style="display:none;">${(h.items||[]).map(i => `${i.itemName} ×${i.quantity}`).join(', ') || '—'}</div>
+            </div>`;
+          row.addEventListener('click', () => {
+            const el = row.querySelector('.history-items');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+          });
+          historyList.appendChild(row);
+        });
+      });
+    }
+    
+    renderHistory('');
+    historySearch.addEventListener('input', (e) => renderHistory(e.target.value));
     
     return wrapper;
   }
@@ -4905,51 +5045,68 @@
     
     const metrics = computeMonthlyMetrics(new Date());
     const p = {
-      name: profile.name || 'Имя',
-      role: profile.role || 'официант',
-      grade: profile.grade || '—',
-      location: profile.location || '—'
+      name: profile.name || '',
+      surname: profile.surname || '',
+      role: profile.role || '',
+      grade: profile.grade || '',
+      location: profile.location || ''
     };
     const photoUrl = profile.photo ? `data:image/jpeg;base64,${profile.photo}` : null;
+    const displayName = (p.surname && p.name) ? `${p.surname} ${p.name}` : (p.name || p.surname || 'Имя');
 
     wrapper.innerHTML = `
-      <div class="profile-header">
-        <div class="profile-avatar" id="profile-avatar">
-          ${photoUrl ? `<img src="${photoUrl}" alt="Фото профиля" class="avatar-image" />` : '<span class="avatar-placeholder">👤</span>'}
+      <div class="profile-header-compact">
+        <div class="profile-avatar-wrapper">
+          <div class="profile-avatar" id="profile-avatar">
+            ${photoUrl ? `<img src="${photoUrl}" alt="Фото профиля" class="avatar-image" />` : '<span class="avatar-placeholder">👤</span>'}
+          </div>
+          <label for="pf-photo" class="profile-photo-add-btn" title="Добавить фото">
+            <span>+</span>
+          </label>
+          <input type="file" id="pf-photo" accept="image/*" style="display:none;" />
         </div>
-        <label for="pf-photo" class="btn secondary" style="margin-top:12px; display:inline-block; cursor:pointer;">
-          ${photoUrl ? 'Изменить фото' : 'Добавить фото'}
-        </label>
-        <input type="file" id="pf-photo" accept="image/*" style="display:none;" />
-        <div class="profile-name">${p.name}</div>
-        <div class="profile-role">${p.role}</div>
+        <div class="profile-name-compact">${displayName}</div>
       </div>
 
-      <div class="panel" style="margin-bottom:12px;">
-        <div class="panel-header"><h2>Профиль</h2></div>
-        <div class="settings-item"><div class="settings-item-label">Имя</div><input id="pf-name" value="${p.name}" /></div>
-        <div class="settings-item"><div class="settings-item-label">Роль</div><input id="pf-role" value="${p.role}" /></div>
-        <div class="settings-item"><div class="settings-item-label">Грейд</div><input id="pf-grade" value="${p.grade}" /></div>
-        <div class="settings-item"><div class="settings-item-label">Локация</div><input id="pf-location" value="${p.location}" placeholder="Напр.: Бык Дмитровка" /></div>
-        ${photoUrl ? '<div class="settings-item"><div class="settings-item-label">Фото</div><button id="pf-remove-photo" class="btn danger" style="font-size:12px;">Удалить фото</button></div>' : ''}
-        <div style="padding:12px; display:flex; gap:8px; justify-content:flex-end;">
-          <button id="pf-save" class="btn primary">Сохранить</button>
+      <div class="profile-form-compact">
+        <div class="profile-form-row">
+          <div class="profile-form-field">
+            <label for="pf-surname">Фамилия</label>
+            <input id="pf-surname" value="${p.surname}" placeholder="Фамилия" />
+          </div>
+          <div class="profile-form-field">
+            <label for="pf-name">Имя</label>
+            <input id="pf-name" value="${p.name}" placeholder="Имя" />
+          </div>
         </div>
+        <div class="profile-form-field">
+          <label for="pf-role">Должность</label>
+          <input id="pf-role" value="${p.role}" placeholder="официант" />
+        </div>
+        <div class="profile-form-field">
+          <label for="pf-grade">Грейд</label>
+          <input id="pf-grade" value="${p.grade}" placeholder="—" />
+        </div>
+        <div class="profile-form-field">
+          <label for="pf-location">Место работы</label>
+          <input id="pf-location" value="${p.location}" placeholder="Напр.: Бык Дмитровка" />
+        </div>
+        <button id="pf-save" class="btn primary" style="width: 100%; margin-top: 12px;">Сохранить</button>
       </div>
 
-      <div class="panel">
-        <div class="panel-header"><h2>Метрики месяца</h2></div>
+      <div class="panel" style="margin-top: 16px;">
+        <div class="panel-header"><h2>Смены</h2></div>
+        <div id="shifts-calendar-container"></div>
+      </div>
+
+      <div class="panel" style="margin-top: 12px;">
+        <div class="panel-header"><h2>Продажи за месяц</h2></div>
         <div class="settings-item"><div class="settings-item-label">Кол-во столов</div><div class="settings-item-value">${metrics.numTables}</div></div>
         <div class="settings-item"><div class="settings-item-label">Выручка</div><div class="settings-item-value">${metrics.revenue} ₽</div></div>
         <div class="settings-item"><div class="settings-item-label">Средний чек (1 стол)</div><div class="settings-item-value">${metrics.averageCheck} ₽</div></div>
         <div class="settings-item"><div class="settings-item-label">Топ‑3 блюда</div>
           <div class="settings-item-value">${metrics.top3.map(t => `${t.name} ×${t.qty}`).join(', ') || '—'}</div>
         </div>
-      </div>
-
-      <div class="panel" style="margin-top: 12px;">
-        <div class="panel-header"><h2>Смены</h2></div>
-        <div id="shifts-calendar-container"></div>
       </div>
     `;
     
@@ -4994,21 +5151,10 @@
       reader.readAsDataURL(file);
     });
 
-    // Remove photo handler
-    const removePhotoBtn = wrapper.querySelector('#pf-remove-photo');
-    if (removePhotoBtn) {
-      removePhotoBtn.addEventListener('click', () => {
-        if (confirm('Удалить фото?')) {
-          delete profile.photo;
-          saveProfile();
-          render();
-        }
-      });
-    }
-
     // Save profile
     wrapper.querySelector('#pf-save').addEventListener('click', () => {
       profile.name = (wrapper.querySelector('#pf-name').value || '').trim();
+      profile.surname = (wrapper.querySelector('#pf-surname').value || '').trim();
       profile.role = (wrapper.querySelector('#pf-role').value || '').trim();
       profile.grade = (wrapper.querySelector('#pf-grade').value || '').trim();
       profile.location = (wrapper.querySelector('#pf-location').value || '').trim();
