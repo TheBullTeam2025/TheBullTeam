@@ -14,7 +14,8 @@
     categoryGrouping: 'waiter.categoryGrouping',
     learningProgress: 'waiter.learningProgress',
     learningLevel: 'waiter.learningLevel',
-    learningXP: 'waiter.learningXP'
+    learningXP: 'waiter.learningXP',
+    shifts: 'waiter.shifts'
   };
 
 
@@ -30,6 +31,8 @@
   let meta = {};
   /** @type {{ name?: string, role?: string, grade?: string, location?: string }} */
   let profile = {};
+  /** @type {Object<string, number>} - shifts: { "2025-06-05": 1, "2025-06-13": 0.5 } */
+  let shifts = {};
   /** @type {{dishes:any[]} | null} */
   let db = null;
   const CATEGORY_CONFIG = {
@@ -69,6 +72,7 @@
     try { meta = JSON.parse(localStorage.getItem(STORAGE_KEYS.meta) || '{}'); } catch { meta = {}; }
     try { currentPage = localStorage.getItem(STORAGE_KEYS.activePage) || 'tables'; } catch { currentPage = 'tables'; }
     try { profile = JSON.parse(localStorage.getItem(STORAGE_KEYS.profile) || '{}'); } catch { profile = {}; }
+    try { shifts = JSON.parse(localStorage.getItem(STORAGE_KEYS.shifts) || '{}'); } catch { shifts = {}; }
     try {
       const storedGrouping = JSON.parse(localStorage.getItem(STORAGE_KEYS.categoryGrouping) || 'null');
       if (storedGrouping && typeof storedGrouping === 'object') {
@@ -82,6 +86,7 @@
     try { learningLevel = parseInt(localStorage.getItem(STORAGE_KEYS.learningLevel) || '1') || 1; } catch { learningLevel = 1; }
     try { learningXP = parseInt(localStorage.getItem(STORAGE_KEYS.learningXP) || '0') || 0; } catch { learningXP = 0; }
   }
+
   function saveTableOrders() { localStorage.setItem(STORAGE_KEYS.tableOrders, JSON.stringify(tableOrders)); }
   function saveTables() { localStorage.setItem(STORAGE_KEYS.tables, JSON.stringify(activeTables)); }
   function saveTableMode() { localStorage.setItem(STORAGE_KEYS.tableMode, tableMode); }
@@ -89,6 +94,7 @@
   function saveOrderHistory() { localStorage.setItem(STORAGE_KEYS.orderHistory, JSON.stringify(orderHistory)); }
   function saveMeta() { localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta)); }
   function saveProfile() { localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)); }
+  function saveShifts() { localStorage.setItem(STORAGE_KEYS.shifts, JSON.stringify(shifts)); }
   function saveCategoryGrouping() { localStorage.setItem(STORAGE_KEYS.categoryGrouping, JSON.stringify(categoryGrouping)); }
   function saveLearningProgress() { localStorage.setItem(STORAGE_KEYS.learningProgress, JSON.stringify(learningProgress)); }
   function saveLearningLevel() { localStorage.setItem(STORAGE_KEYS.learningLevel, learningLevel.toString()); }
@@ -4940,6 +4946,11 @@
           <div class="settings-item-value">${metrics.top3.map(t => `${t.name} ×${t.qty}`).join(', ') || '—'}</div>
         </div>
       </div>
+
+      <div class="panel" style="margin-top: 12px;">
+        <div class="panel-header"><h2>Смены</h2></div>
+        <div id="shifts-calendar-container"></div>
+      </div>
     `;
     
     // Special handlers for table mode toggles - DISABLED
@@ -5004,8 +5015,132 @@
       saveProfile();
       render();
     });
+
+    // Initialize calendar
+    initShiftsCalendar(wrapper.querySelector('#shifts-calendar-container'));
     
     return wrapper;
+  }
+
+  // Shifts calendar functions
+  function initShiftsCalendar(container) {
+    let currentDate = new Date();
+    currentDate.setDate(1); // Start of month
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+      const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      
+      // Get first day of month and number of days
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+      
+      let html = `
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" id="calendar-prev">‹</button>
+          <div class="calendar-month-year">${monthNames[month]} ${year}</div>
+          <button class="calendar-nav-btn" id="calendar-next">›</button>
+        </div>
+        <div class="calendar-grid">
+          <div class="calendar-days-header">
+            ${dayNames.map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
+          </div>
+          <div class="calendar-days">
+      `;
+      
+      // Previous month days
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        html += `<div class="calendar-day calendar-day-other">${day}</div>`;
+      }
+      
+      // Current month days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const shiftValue = shifts[dateKey] || 0;
+        const isFullShift = shiftValue === 1;
+        const isHalfShift = shiftValue === 0.5;
+        const hasShift = isFullShift || isHalfShift;
+        
+        html += `
+          <div class="calendar-day calendar-day-current ${hasShift ? 'calendar-day-has-shift' : ''}" 
+               data-date="${dateKey}" 
+               data-shift="${shiftValue}">
+            <span class="calendar-day-number">${day}</span>
+            ${isFullShift ? '<div class="calendar-shift-full"></div>' : ''}
+            ${isHalfShift ? '<div class="calendar-shift-half"></div>' : ''}
+          </div>
+        `;
+      }
+      
+      // Next month days (fill remaining cells to complete grid)
+      const totalCells = firstDay + daysInMonth;
+      const remainingCells = Math.ceil(totalCells / 7) * 7 - totalCells;
+      for (let day = 1; day <= remainingCells; day++) {
+        html += `<div class="calendar-day calendar-day-other">${day}</div>`;
+      }
+      
+      html += `
+          </div>
+        </div>
+        <div class="calendar-legend">
+          <div class="calendar-legend-item">
+            <div class="calendar-legend-box calendar-legend-full"></div>
+            <span>Полная смена</span>
+          </div>
+          <div class="calendar-legend-item">
+            <div class="calendar-legend-box calendar-legend-half"></div>
+            <span>Пол смены</span>
+          </div>
+          <div class="calendar-legend-hint">Нажмите на дату для изменения смены</div>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+      
+      // Event listeners
+      container.querySelector('#calendar-prev').addEventListener('click', () => {
+        currentDate.setMonth(month - 1);
+        renderCalendar();
+      });
+      
+      container.querySelector('#calendar-next').addEventListener('click', () => {
+        currentDate.setMonth(month + 1);
+        renderCalendar();
+      });
+      
+      // Day click handlers
+      container.querySelectorAll('.calendar-day-current').forEach(dayEl => {
+        dayEl.addEventListener('click', () => {
+          const dateKey = dayEl.dataset.date;
+          const currentShift = shifts[dateKey] || 0;
+          
+          // Cycle: no shift -> half shift -> full shift -> no shift
+          let newShift = 0;
+          if (currentShift === 0) {
+            newShift = 0.5;
+          } else if (currentShift === 0.5) {
+            newShift = 1;
+          } else {
+            newShift = 0;
+          }
+          
+          if (newShift === 0) {
+            delete shifts[dateKey];
+          } else {
+            shifts[dateKey] = newShift;
+          }
+          
+          saveShifts();
+          renderCalendar();
+        });
+      });
+    }
+    
+    renderCalendar();
   }
 
   // Navigation event handlers

@@ -1,8 +1,8 @@
 /* Search Filters Styles */
 .filters-panel {
-  background: var(--panel);
-  border: 1px solid var(--divider);
-  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 20px;
   margin: 16px 0;
   display: none;
@@ -20,25 +20,29 @@
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--text);
+  color: var(--card-foreground);
 }
 
 .filter-group select,
 .filter-group input[type="number"] {
   width: 100%;
   padding: 8px 12px;
-  background: var(--bg);
-  border: 1px solid var(--divider);
-  border-radius: 6px;
-  color: var(--text);
+  background: var(--background);
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  color: var(--foreground);
   font-size: 14px;
 }
 
 .filter-group select:focus,
 .filter-group input[type="number"]:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(100, 74, 64, 0.2);
+}
+.dark .filter-group select:focus,
+.dark .filter-group input[type="number"]:focus {
+  box-shadow: 0 0 0 2px rgba(255, 224, 194, 0.2);
 }
 
 .price-range,
