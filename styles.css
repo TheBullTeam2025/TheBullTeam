@@ -3963,5 +3963,9 @@ body:has(.learn-page-gamified) {
   text-decoration: line-through;
   opacity: 0.6;
 }
+.todo-hint,
+.todo-rkeeper {
+  color: var(--foreground); /* или #fff */
+}
 
 
