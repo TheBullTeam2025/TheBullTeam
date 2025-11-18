@@ -68,13 +68,13 @@
   --card: #171717;
   --card-foreground: #e2e8f0;
   --popover: #242424;
-  --popover-foreground: #a9a9a9;
+  --popover-foreground: #c9c9c9;
   --primary: #95232b;
   --primary-foreground: #dde8e3;
   --secondary: #242424;
   --secondary-foreground: #fafafa;
   --muted: #1f1f1f;
-  --muted-foreground: #a2a2a2;
+  --muted-foreground: #c9c9c9;
   --accent: #313131;
   --accent-foreground: #fafafa;
   --destructive: #541c15;
@@ -272,7 +272,7 @@ body:has(.learn-page) .app-header {
 .table-rename-btn, .table-clear-btn { 
   background: none; 
   border: none; 
-  color: var(--muted); 
+  color: var(--foreground); 
   cursor: pointer; 
   padding: 4px; 
   border-radius: 4px; 
@@ -354,6 +354,10 @@ body:has(.learn-page) .app-header {
   -moz-user-select: text;
   -ms-user-select: text;
   user-select: text;
+}
+.form-row input::placeholder {
+  color: var(--foreground);
+  opacity: 0.7;
 }
 .form-actions { display: flex; gap: 8px; }
 
@@ -438,6 +442,10 @@ body:has(.learn-page) .app-header {
   -ms-user-select: text;
   user-select: text;
 }
+.search-row input::placeholder {
+  color: var(--foreground);
+  opacity: 0.7;
+}
 .menu-list { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
 
 /* New dish card design */
@@ -482,7 +490,7 @@ body:has(.learn-page) .app-header {
 
 .dish-category {
   font-size: 12px;
-  color: var(--muted-foreground);
+  color: var(--foreground);
   margin: 2px 0;
   font-weight: 500;
   text-transform: uppercase;
@@ -588,7 +596,7 @@ body:has(.learn-page) .app-header {
   background: var(--muted);
   border-top: 1px solid var(--border);
   font-size: 12px;
-  color: var(--foreground);
+  color: var(--muted-foreground);
   font-weight: 600;
   text-align: center;
   border-radius: 0 0 var(--radius) var(--radius);
@@ -601,7 +609,7 @@ body:has(.learn-page) .app-header {
 
 .rkeeper-code {
   font-weight: 600;
-  color: var(--foreground);
+  color: var(--primary-foreground);
   background: var(--primary);
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
@@ -627,7 +635,7 @@ body:has(.learn-page) .app-header {
 
 .dish-notes-label {
   font-size: 12px;
-  color: var(--muted-foreground);
+  color: var(--foreground);
   margin-bottom: 6px;
   font-weight: 500;
 }
@@ -659,7 +667,7 @@ body:has(.learn-page) .app-header {
 }
 
 .dish-notes-input::placeholder {
-  color: var(--muted-foreground);
+  color: var(--foreground);
   opacity: 0.7;
 }
 .bottom-bar { position: sticky; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; padding: 12px; background: rgba(249, 249, 249, 0.88); backdrop-filter: blur(6px); border-top: 1px solid var(--border); }
@@ -718,7 +726,7 @@ body:has(.learn-page) .app-header {
 
 .order-details {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--foreground);
   line-height: 1.4;
 }
 
@@ -1113,7 +1121,7 @@ body:has(.learn-page) .app-header {
 }
 
 .profile-form-field input::placeholder {
-  color: var(--muted-foreground);
+  color: var(--foreground);
   opacity: 0.6;
 }
 
@@ -1508,7 +1516,7 @@ body:has(.learn-page) .app-header {
 
 .todo-hint {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--foreground);
   text-align: center;
 }
 
@@ -1552,7 +1560,7 @@ body:has(.learn-page) .app-header {
 }
 
 .todo-rkeeper {
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .todo-notes-section {
@@ -1602,7 +1610,7 @@ body:has(.learn-page) .app-header {
 }
 
 .todo-notes-input::placeholder {
-  color: var(--muted);
+  color: var(--foreground);
   opacity: 0.8;
   font-weight: 400;
 }
@@ -1690,7 +1698,7 @@ body:has(.learn-page) .app-header {
 
 .suggestion-category {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .suggestion-price {
@@ -1780,7 +1788,7 @@ body:has(.learn-page) .app-header {
 
 .composition-list li {
   padding: 4px 0;
-  color: var(--muted);
+  color: var(--foreground);
   border-bottom: 1px solid var(--divider);
 }
 
@@ -1804,7 +1812,7 @@ body:has(.learn-page) .app-header {
 }
 
 .dish-description {
-  color: var(--muted);
+  color: var(--foreground);
   line-height: 1.5;
   margin: 0;
 }
@@ -1990,7 +1998,7 @@ body:has(.learn-page) .app-header {
 .search-placeholder {
   padding: 60px 20px;
   text-align: center;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .placeholder-icon {
@@ -2007,7 +2015,7 @@ body:has(.learn-page) .app-header {
 
 .search-placeholder p {
   margin: 0 0 24px 0;
-  color: var(--muted);
+  color: var(--foreground);
   font-size: 16px;
 }
 
@@ -2144,7 +2152,7 @@ body:has(.learn-page) .app-header {
 .btn-close {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--foreground);
   font-size: 24px;
   cursor: pointer;
   padding: 4px 8px;
@@ -2207,7 +2215,7 @@ body:has(.learn-page) .app-header {
 }
 
 .range-separator {
-  color: var(--muted);
+  color: var(--foreground);
   font-weight: 600;
   font-size: 16px;
 }
@@ -2287,7 +2295,7 @@ body:has(.learn-page) .app-header {
 
 .dish-result-category {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--foreground);
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2309,7 +2317,7 @@ body:has(.learn-page) .app-header {
 
 .dish-result-calories {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--foreground);
   background: rgba(239, 68, 68, 0.1);
   padding: 4px 8px;
   border-radius: 12px;
@@ -2318,7 +2326,7 @@ body:has(.learn-page) .app-header {
 .results-more-info {
   text-align: center;
   padding: 20px;
-  color: var(--muted);
+  color: var(--foreground);
   font-size: 14px;
   font-style: italic;
 }
@@ -2399,7 +2407,7 @@ body:has(.learn-page) .app-header {
 
 .stat-label {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 /* Learning Mode Buttons */
@@ -2440,7 +2448,7 @@ body:has(.learn-page) .app-header {
 
 .mode-desc {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 /* Theory Mode Cards */
@@ -3317,7 +3325,8 @@ body:has(.learn-page-gamified) {
 }
 
 .menu-search-input::placeholder {
-  color: var(--muted-foreground);
+  color: var(--foreground);
+  opacity: 0.7;
 }
 
 .learn-categories-grid {
@@ -3718,7 +3727,7 @@ body:has(.learn-page-gamified) {
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: var(--muted);
+  color: var(--foreground);
   cursor: pointer;
 }
 
@@ -3963,9 +3972,6 @@ body:has(.learn-page-gamified) {
   text-decoration: line-through;
   opacity: 0.6;
 }
-.todo-hint,
-.todo-rkeeper {
-  color: var(--foreground); /* или #fff */
-}
+
 
 

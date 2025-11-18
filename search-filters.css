@@ -20,11 +20,12 @@
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--card-foreground);
+  color: var(--foreground);
 }
 
 .filter-group select,
-.filter-group input[type="number"] {
+.filter-group input[type="number"],
+.filter-group input[type="text"] {
   width: 100%;
   padding: 8px 12px;
   background: var(--background);
@@ -32,6 +33,11 @@
   border-radius: var(--radius);
   color: var(--foreground);
   font-size: 14px;
+}
+
+.filter-group input::placeholder {
+  color: var(--foreground);
+  opacity: 0.7;
 }
 
 .filter-group select:focus,
@@ -59,7 +65,7 @@
 
 .price-range span,
 .calorie-range span {
-  color: var(--muted);
+  color: var(--foreground);
   font-weight: 500;
 }
 
@@ -103,7 +109,7 @@
   border-radius: 6px;
   margin: 16px 0;
   font-size: 14px;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .search-stats #results-count {
@@ -164,7 +170,7 @@
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .menu-item-category {
@@ -175,7 +181,7 @@
 }
 
 .menu-item-weight {
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .menu-item-composition,
@@ -198,11 +204,11 @@
 }
 
 .menu-item-kbju {
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .menu-item-description {
-  color: var(--muted);
+  color: var(--foreground);
   font-style: italic;
 }
 
@@ -236,3 +242,4 @@
     gap: 4px;
   }
 }
+

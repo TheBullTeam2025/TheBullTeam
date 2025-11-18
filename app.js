@@ -538,39 +538,36 @@
       return;
     }
     
-    // Add category group to each order for sorting
-    tableOrders[tableNum].forEach(order => {
+    // Ensure all orders have addedAt timestamp
+    const now = Date.now();
+    tableOrders[tableNum].forEach((order, index) => {
+      if (!order.addedAt) {
+        // If no addedAt, use createdAt or assign based on current position
+        order.addedAt = order.createdAt || (now - (tableOrders[tableNum].length - index) * 1000);
+      }
+      
       const baseGroup = getCategoryGroup(order);
       const groupEnabled = isCategoryGroupEnabled(baseGroup);
       order._categoryGroup = baseGroup;
       order._categoryEnabled = groupEnabled;
-      // If category is enabled, use baseGroup (1-4); if disabled, use 1000 (goes to bottom, preserves add order)
       order._sortGroup = groupEnabled ? baseGroup : 1000;
       order._statusRank = order.status === 'served' ? 2 : (order.status === 'rkeeper' ? 1 : 0);
     });
     
-    // Sort by sort group, then by status (only for enabled categories), then by addedAt
+    // Sort: category group -> status -> newest first
     tableOrders[tableNum].sort((a, b) => {
-      const aSortGroup = a._sortGroup || 0;
-      const bSortGroup = b._sortGroup || 0;
-      
-      // First, sort by group (enabled categories first, disabled last)
-      if (aSortGroup !== bSortGroup) {
-        return aSortGroup - bSortGroup;
+      // 1. Sort by category group (1=drinks, 2=cold, 3=hot, 4=dessert, 1000=disabled)
+      if (a._sortGroup !== b._sortGroup) {
+        return a._sortGroup - b._sortGroup;
       }
       
-      // For enabled categories (sortGroup < 1000), sort by status and time
-      if (aSortGroup < 1000) {
-        if ((a._statusRank || 0) !== (b._statusRank || 0)) {
-          // Reverse sort: items with status (rkeeper/served) go to bottom
-          return (b._statusRank || 0) - (a._statusRank || 0);
-        }
-        // Enabled: newest first
-        return (b.addedAt || 0) - (a.addedAt || 0);
+      // 2. Within same category, sort by status (0=no status first, 1=rkeeper, 2=served last)
+      if (a._statusRank !== b._statusRank) {
+        return a._statusRank - b._statusRank;
       }
       
-      // For disabled categories (sortGroup >= 1000), preserve natural order (oldest first)
-      return (a.addedAt || 0) - (b.addedAt || 0);
+      // 3. Within same status, newest first (higher timestamp = newer = comes first)
+      return (b.addedAt || 0) - (a.addedAt || 0);
     });
     
     saveTableOrders();
