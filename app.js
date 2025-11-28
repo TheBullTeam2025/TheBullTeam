@@ -5426,10 +5426,13 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-      const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
       
       // Get first day of month and number of days
-      const firstDay = new Date(year, month, 1).getDay();
+      let firstDay = new Date(year, month, 1).getDay();
+      // Convert Sunday (0) to 7, then subtract 1 to make Monday = 0
+      firstDay = firstDay === 0 ? 6 : firstDay - 1;
+      
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const daysInPrevMonth = new Date(year, month, 0).getDate();
       
