@@ -3859,15 +3859,23 @@
           
           // Event listeners
           addBtn.addEventListener('click', () => {
-            // Check if this is a steak (excluding turkey and fish)
+            console.log('Add button clicked for:', d.name);
+            
+            // Check if this is a steak (excluding turkey, fish, and alternative steaks)
             const dishName = (d.name || '').toLowerCase();
-            const isSteak = dishName.includes('стейк') && 
+            const category = (d.category || '').toLowerCase();
+            const isSteak = (dishName.includes('стейк') || 
+                           category.includes('стейк') ||
+                           category.includes('прайм')) && 
                            !dishName.includes('индейк') && 
                            !dishName.includes('индюш') &&
-                           !dishName.includes('рыб');
+                           !dishName.includes('рыб') &&
+                           !category.includes('альтернативные стейки');
             
             // Check if this is ice cream
             const isIceCream = dishName.includes('мороженое') || dishName.includes('мороженное');
+            
+            console.log('Is steak:', isSteak, 'Is ice cream:', isIceCream);
             
             // Function to add dish with optional cooking level or ice cream flavors
             const addDishToTable = (cookingLevel = null, iceCreamFlavors = null) => {
@@ -3913,15 +3921,20 @@
             
             // If it's a steak, show cooking level modal
             if (isSteak) {
+              console.log('Showing cooking level modal for:', d.name);
               showCookingLevelModal(d.name, (selectedLevel) => {
+                console.log('Selected cooking level:', selectedLevel);
                 addDishToTable(selectedLevel, null);
               });
             } else if (isIceCream) {
               // If it's ice cream, show flavor selection modal
+              console.log('Showing ice cream modal for:', d.name);
               showIceCreamFlavorModal(d.name, (selectedFlavors) => {
+                console.log('Selected flavors:', selectedFlavors);
                 addDishToTable(null, selectedFlavors);
               });
             } else {
+              console.log('Adding dish without modal');
               addDishToTable(null, null);
             }
           });
@@ -4336,40 +4349,100 @@
     }
 
     function selectDish(dish) {
-      // Add the dish to table
-      addOrderToTable(tableNumber, dish);
+      console.log('selectDish called for:', dish.name);
       
-      // Clear input and hide suggestions
-      todoInput.value = '';
-      suggestionsContainer.style.display = 'none';
+      // Check if it's a steak that needs cooking level (excluding alternative steaks)
+      const isSteak = dish.category && 
+        (dish.category.includes('стейк') || 
+         dish.category.includes('Прайм') ||
+         dish.name.toLowerCase().includes('стейк')) &&
+        !dish.category.includes('Альтернативные стейки') &&
+        !dish.name.toLowerCase().includes('рыб') &&
+        !dish.name.toLowerCase().includes('форель') &&
+        !dish.name.toLowerCase().includes('треск') &&
+        !dish.name.toLowerCase().includes('дорадо') &&
+        !dish.name.toLowerCase().includes('сибас');
       
-      // Re-render the list
-      renderTodoList();
+      // Check if it's ice cream
+      const isIceCream = dish.name.toLowerCase().includes('мороженое') || 
+                        dish.name.toLowerCase().includes('мороженное');
+      
+      console.log('Is steak:', isSteak, 'Is ice cream:', isIceCream);
+      
+      if (isSteak) {
+        console.log('Showing cooking level modal from suggestion');
+        showCookingLevelModal(dish.name, (selectedLevel) => {
+          addOrderToTable(tableNumber, dish, selectedLevel);
+          todoInput.value = '';
+          suggestionsContainer.style.display = 'none';
+          renderTodoList();
+        });
+      } else if (isIceCream) {
+        console.log('Showing ice cream modal from suggestion');
+        showIceCreamFlavorModal(dish.name, (selectedFlavors) => {
+          addOrderToTable(tableNumber, dish, null, selectedFlavors);
+          todoInput.value = '';
+          suggestionsContainer.style.display = 'none';
+          renderTodoList();
+        });
+      } else {
+        // Add the dish to table directly
+        addOrderToTable(tableNumber, dish);
+        
+        // Clear input and hide suggestions
+        todoInput.value = '';
+        suggestionsContainer.style.display = 'none';
+        
+        // Re-render the list
+        renderTodoList();
+      }
     }
 
     function addTodoItem() {
+      console.log('=== addTodoItem called ===');
       const input = todoInput.value.trim();
-      if (!input) return;
+      console.log('Input value:', input);
+      if (!input) {
+        console.log('Input is empty, returning');
+        return;
+      }
 
       // Try to find matching dish
       const matchingDish = findDishByName(input);
+      console.log('Matching dish:', matchingDish);
       
       if (matchingDish) {
-        // Check if it's a steak that needs cooking level
+        console.log('Found dish:', matchingDish.name);
+        
+        // Check if it's a steak that needs cooking level (excluding alternative steaks)
         const isSteak = matchingDish.category && 
           (matchingDish.category.includes('стейк') || 
-           matchingDish.category.includes('Прайм') || 
-           matchingDish.category.includes('Альтернативные стейки') ||
+           matchingDish.category.includes('Прайм') ||
            matchingDish.name.toLowerCase().includes('стейк')) &&
+          !matchingDish.category.includes('Альтернативные стейки') &&
           !matchingDish.name.toLowerCase().includes('рыб') &&
           !matchingDish.name.toLowerCase().includes('форель') &&
           !matchingDish.name.toLowerCase().includes('треск') &&
           !matchingDish.name.toLowerCase().includes('дорадо') &&
           !matchingDish.name.toLowerCase().includes('сибас');
         
+        // Check if it's ice cream
+        const isIceCream = matchingDish.name.toLowerCase().includes('мороженое') || 
+                          matchingDish.name.toLowerCase().includes('мороженное');
+        
+        console.log('Is steak:', isSteak, 'Is ice cream:', isIceCream);
+        
         if (isSteak) {
+          console.log('Showing cooking level modal');
           showCookingLevelModal(matchingDish.name, (selectedLevel) => {
             addOrderToTable(tableNumber, matchingDish, selectedLevel);
+            todoInput.value = '';
+            renderTodoList();
+          });
+        } else if (isIceCream) {
+          console.log('Showing ice cream modal');
+          showIceCreamFlavorModal(matchingDish.name, (selectedFlavors) => {
+            addOrderToTable(tableNumber, matchingDish, null, selectedFlavors);
             todoInput.value = '';
             renderTodoList();
           });
@@ -4498,17 +4571,17 @@
       }, 3000);
     }
 
-    function addOrderToTable(tableNum, dish, cookingLevel = null) {
+    function addOrderToTable(tableNum, dish, cookingLevel = null, iceCreamFlavors = null) {
       if (!tableOrders[tableNum]) {
         tableOrders[tableNum] = [];
       }
       
-      // Check if it's a steak (meat, not fish) that needs cooking level
+      // Check if it's a steak (meat, not fish) that needs cooking level (excluding alternative steaks)
       const isSteak = dish.category && 
         (dish.category.includes('стейк') || 
-         dish.category.includes('Прайм') || 
-         dish.category.includes('Альтернативные стейки') ||
+         dish.category.includes('Прайм') ||
          dish.name.toLowerCase().includes('стейк')) &&
+        !dish.category.includes('Альтернативные стейки') &&
         !dish.name.toLowerCase().includes('рыб') &&
         !dish.name.toLowerCase().includes('форель') &&
         !dish.name.toLowerCase().includes('треск') &&
@@ -4533,6 +4606,7 @@
         addedAt: Date.now(),
         isCustom: dish.isCustom || false, // Flag for custom dishes
         cookingLevel: cookingLevel || null, // Store cooking level for steaks
+        iceCreamFlavors: iceCreamFlavors || null, // Store ice cream flavors
         category: dish.category || '', // Store category for sorting
       };
       
