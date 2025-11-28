@@ -374,6 +374,62 @@
     });
   }
 
+  function showCookingLevelModal(dishName, callback) {
+    const modal = document.createElement('div');
+    modal.className = 'rename-modal cooking-level-modal';
+    modal.innerHTML = `
+      <div class="rename-content cooking-level-content">
+        <div class="rename-title">Выберите прожарку</div>
+        <div class="cooking-level-dish">${dishName}</div>
+        <div class="cooking-level-options">
+          <button class="cooking-level-btn" data-level="Blue">1. Blue<br><span class="level-desc">С кровью</span></button>
+          <button class="cooking-level-btn" data-level="Rare">2. Rare<br><span class="level-desc">Слабая</span></button>
+          <button class="cooking-level-btn" data-level="Medium Rare">3. Medium Rare<br><span class="level-desc">Средне-слабая</span></button>
+          <button class="cooking-level-btn" data-level="Medium">4. Medium<br><span class="level-desc">Средняя</span></button>
+          <button class="cooking-level-btn" data-level="Medium Well">5. Medium Well<br><span class="level-desc">Средне-сильная</span></button>
+          <button class="cooking-level-btn" data-level="Well Done">6. Well Done<br><span class="level-desc">Полная</span></button>
+        </div>
+        <button class="btn secondary" id="cooking-cancel">Отмена</button>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const cancelBtn = modal.querySelector('#cooking-cancel');
+    const levelBtns = modal.querySelectorAll('.cooking-level-btn');
+    
+    // Event handlers for cooking level buttons
+    levelBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const level = btn.dataset.level;
+        document.body.removeChild(modal);
+        callback(level);
+      });
+    });
+    
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        if (document.body.contains(modal)) {
+          document.body.removeChild(modal);
+        }
+        document.removeEventListener('keydown', escHandler);
+      }
+    });
+  }
+
   async function loadDb(forceReload = false) {
     if (db && !forceReload) return db;
     try {
@@ -471,43 +527,70 @@
     const itemName = (order.itemName || '').toLowerCase();
     const category = (order.category || '').toLowerCase();
     
-    // 1. Напитки (алкогольные и безалкогольные)
-    const drinkKeywords = [
-      'напиток', 'сок', 'чай', 'кофе', 'вода', 'лимонад', 'компот', 'морс', 'коктейль',
-      'пиво', 'вино', 'водка', 'коньяк', 'виски', 'ром', 'джин', 'текила', 'шампанское',
-      'кола', 'пепси', 'спрайт', 'фанта', 'миринда', 'энергетик', 'газировка',
-      'молоко', 'кефир', 'йогурт', 'ряженка', 'снежок', 'тан', 'айран', 'латте', 'капучино',
-      'эспрессо', 'американо', 'раф', 'фраппе', 'глясе', 'безалкогольн', 'алкогольн', 'bar'
-    ];
+    // 1. Напитки - ТОЛЬКО из bar_drinks (проверяем по R_keeper коду или категории бара)
+    // Сначала проверяем, есть ли это блюдо в bar_drinks
+    if (db && db.dishes) {
+      const barDrink = db.dishes.find(d => 
+        d.source === 'bar' && 
+        (d.name === order.itemName || d.R_keeper === order.rkeeper)
+      );
+      if (barDrink) {
+        return 1; // Напитки из бара
+      }
+    }
     
-    if (drinkKeywords.some(keyword => itemName.includes(keyword) || category.includes(keyword))) {
+    // Дополнительная проверка по категории для напитков
+    const barCategories = [
+      'безалкогольные напитки', 'алкогольные напитки', 'коктейли', 
+      'вино', 'пиво', 'крепкий алкоголь', 'кофе', 'чай'
+    ];
+    if (barCategories.some(cat => category.includes(cat.toLowerCase()))) {
       return 1; // Напитки
     }
     
-    // 3. Горячие блюда (стейки, хоспер, гриль) - проверяем раньше холодных закусок
-    const hotDishKeywords = [
-      'стейк', 'хоспер', 'гриль', 'жарен', 'тушен', 'томлен', 'запечен',
-      'прайм', 'рибай', 'филе миньон', 'стриплойн', 'тибон', 'портерхаус',
-      'суп', 'бульон', 'харчо', 'солянка', 'окрошка', 'гаспачо',
-      'паста', 'ризотто', 'рагу', 'жаркое'
+    // 2. Холодные блюда - Закуски, Гарниры, Салаты, Супы
+    const coldDishCategories = [
+      'закуски', 'салат', 'супы', 'гарниры', 'гарнир'
     ];
     
-    if (hotDishKeywords.some(keyword => itemName.includes(keyword) || category.includes(keyword))) {
-      return 3; // Горячие блюда
+    // Проверяем по категории (точное совпадение)
+    if (coldDishCategories.some(cat => category === cat || category.includes(cat))) {
+      return 2; // Холодные блюда
     }
     
-    // 4. Десерты
-    const dessertKeywords = [
-      'десерт', 'торт', 'пирог', 'мороженое', 'сорбет', 'чизкейк', 'тирамису', 
-      'панна котта', 'крем', 'суфле', 'мусс', 'штрудель', 'печенье', 'круассан',
-      'пирожное', 'эклер', 'макарун', 'брауни', 'кекс', 'маффин', 'фондан', 'медовик'
+    // Дополнительная проверка по ключевым словам в названии
+    const coldDishKeywords = [
+      'салат', 'закуска', 'гарнир', 'суп', 'борщ', 'стрипс'
     ];
+    if (coldDishKeywords.some(keyword => itemName.includes(keyword))) {
+      return 2; // Холодные блюда
+    }
     
-    if (dessertKeywords.some(keyword => itemName.includes(keyword) || category.includes(keyword))) {
+    // 4. Десерты - только категория "Десерты"
+    if (category === 'десерты') {
       return 4; // Десерты
     }
     
-    // 2. Холодные блюда и закуски (все остальное - салаты, закуски, стрипсы и т.д.)
+    // 3. Горячие блюда - Пицца, Хоспер, Разное, Бургеры, Сеты, Альтернативные стейки, Прайм
+    const hotDishCategories = [
+      'римская пицца', 'хоспер', 'разное', 'бургеры', 'сеты', 
+      'альтернативные стейки', 'прайм'
+    ];
+    
+    if (hotDishCategories.some(cat => category === cat || category.includes(cat))) {
+      return 3; // Горячие блюда
+    }
+    
+    // Дополнительная проверка по ключевым словам для горячих блюд
+    const hotDishKeywords = [
+      'стейк', 'пицца', 'бургер', 'томагавк', 'рибай', 'филе миньон'
+    ];
+    
+    if (hotDishKeywords.some(keyword => itemName.includes(keyword))) {
+      return 3; // Горячие блюда
+    }
+    
+    // По умолчанию - холодные блюда (если не попало ни в одну категорию)
     return 2; // Холодные блюда и закуски
   }
 
@@ -1380,7 +1463,6 @@
           </div>
           <span class="module-icon-gamified">🍽️</span>
           <span class="module-title-gamified">Изучение блюд</span>
-          <div class="module-stars">${getStars(dishesProgress)}</div>
         </div>
         
         <div class="learn-module-card-gamified" data-module="bar-study" data-progress="${barStudyProgress}">
@@ -1397,7 +1479,6 @@
           </div>
           <span class="module-icon-gamified">🍷</span>
           <span class="module-title-gamified">Изучение бара</span>
-          <div class="module-stars">${getStars(barStudyProgress)}</div>
         </div>
         
         <div class="learn-module-card-gamified" data-module="theory" data-progress="${theoryModuleProgress}">
@@ -1414,7 +1495,6 @@
           </div>
           <span class="module-icon-gamified">📖</span>
           <span class="module-title-gamified">Теория</span>
-          <div class="module-stars">${getStars(theoryModuleProgress)}</div>
         </div>
         
         <div class="learn-module-card-gamified" data-module="service-steps" data-progress="${serviceStepsProgress}">
@@ -1431,7 +1511,6 @@
           </div>
           <span class="module-icon-gamified">🤝</span>
           <span class="module-title-gamified">6 шагов сервиса</span>
-          <div class="module-stars">${getStars(serviceStepsProgress)}</div>
         </div>
       </div>
     `;
@@ -1565,7 +1644,6 @@
             <div class="category-card-label">${category.name}</div>
           </div>
           <div class="category-card-name">${category.name}</div>
-          <div class="category-card-progress">${category.progress}%</div>
         `;
         grid.appendChild(card);
         
@@ -2019,7 +2097,6 @@
             <div class="category-card-label">${category.name}</div>
           </div>
           <div class="category-card-name">${category.name}</div>
-          <div class="category-card-progress">${category.progress}%</div>
         `;
         grid.appendChild(card);
         
@@ -3379,6 +3456,21 @@
             details.appendChild(composition);
           }
           
+          // Cooking level for steaks
+          if (order.cookingLevel) {
+            const cookingLevel = document.createElement('div');
+            cookingLevel.className = 'dish-cooking-level';
+            const levelLabel = document.createElement('span');
+            levelLabel.textContent = 'Прожарка: ';
+            levelLabel.className = 'detail-label cooking-level-label';
+            const levelText = document.createElement('span');
+            levelText.textContent = order.cookingLevel;
+            levelText.className = 'cooking-level-value';
+            cookingLevel.appendChild(levelLabel);
+            cookingLevel.appendChild(levelText);
+            details.appendChild(cookingLevel);
+          }
+          
           if (order.allergens && order.allergens !== '—') {
             const allergens = document.createElement('div');
             allergens.className = 'dish-allergens';
@@ -3640,42 +3732,62 @@
           
           // Event listeners
           addBtn.addEventListener('click', () => {
-            // Initialize table orders if not exists
-            if (!tableOrders[tableNumber]) {
-              tableOrders[tableNumber] = [];
+            // Check if this is a steak (excluding turkey and fish)
+            const dishName = (d.name || '').toLowerCase();
+            const isSteak = dishName.includes('стейк') && 
+                           !dishName.includes('индейк') && 
+                           !dishName.includes('индюш') &&
+                           !dishName.includes('рыб');
+            
+            // Function to add dish with optional cooking level
+            const addDishToTable = (cookingLevel = null) => {
+              // Initialize table orders if not exists
+              if (!tableOrders[tableNumber]) {
+                tableOrders[tableNumber] = [];
+              }
+              // Add to specific table with full details (new items go to top)
+              tableOrders[tableNumber].unshift({ 
+                id: uuid(), 
+                itemName: d.name, 
+                quantity: parseInt(quantity.textContent), 
+                price: d.price,
+                calculatedPrice: calculatePrice(d.price, d.category),
+                composition: d.composition ? d.composition.slice(0, 3).join(', ') : '',
+                allergens: d.allergens ? d.allergens.slice(0, 3).join(', ') : '',
+                rkeeper: d.R_keeper,
+                notes: notesInput.value,
+                createdAt: Date.now(),
+                addedAt: Date.now(),
+                category: d.category || '', // Store category for sorting
+                cookingLevel: cookingLevel // Store cooking level for steaks
+              });
+              saveTableOrders();
+              // Auto-sort after adding
+              sortTableOrdersByCategory(tableNumber);
+              // Switch to table orders view
+              renderTableOrders();
+              // Update counter
+              const chip = panelMenu.querySelector('.chip');
+              if (chip) {
+                chip.textContent = `Заказов в столе: ${tableOrders[tableNumber].length}`;
+              }
+              // Show feedback
+              addBtn.textContent = '✓ Добавлено';
+              addBtn.disabled = true;
+              setTimeout(() => {
+                addBtn.textContent = 'Добавить';
+                addBtn.disabled = false;
+              }, 1000);
+            };
+            
+            // If it's a steak, show cooking level modal
+            if (isSteak) {
+              showCookingLevelModal(d.name, (selectedLevel) => {
+                addDishToTable(selectedLevel);
+              });
+            } else {
+              addDishToTable();
             }
-            // Add to specific table with full details (new items go to top)
-            tableOrders[tableNumber].unshift({ 
-              id: uuid(), 
-              itemName: d.name, 
-              quantity: parseInt(quantity.textContent), 
-              price: d.price,
-              calculatedPrice: calculatePrice(d.price, d.category),
-              composition: d.composition ? d.composition.slice(0, 3).join(', ') : '',
-              allergens: d.allergens ? d.allergens.slice(0, 3).join(', ') : '',
-              rkeeper: d.R_keeper,
-              notes: notesInput.value,
-              createdAt: Date.now(),
-              addedAt: Date.now(),
-              category: d.category || '' // Store category for sorting
-            });
-            saveTableOrders();
-            // Auto-sort after adding
-            sortTableOrdersByCategory(tableNumber);
-            // Switch to table orders view
-            renderTableOrders();
-            // Update counter
-            const chip = panelMenu.querySelector('.chip');
-            if (chip) {
-              chip.textContent = `Заказов в столе: ${tableOrders[tableNumber].length}`;
-            }
-            // Show feedback
-            addBtn.textContent = '✓ Добавлено';
-            addBtn.disabled = true;
-            setTimeout(() => {
-              addBtn.textContent = 'Добавить';
-              addBtn.disabled = false;
-            }, 1000);
           });
           
           minusBtn.addEventListener('click', () => {
@@ -4120,7 +4232,11 @@
           !matchingDish.name.toLowerCase().includes('сибас');
         
         if (isSteak) {
-          showCookingLevelDialog(matchingDish);
+          showCookingLevelModal(matchingDish.name, (selectedLevel) => {
+            addOrderToTable(tableNumber, matchingDish, selectedLevel);
+            todoInput.value = '';
+            renderTodoList();
+          });
         } else {
           addOrderToTable(tableNumber, matchingDish);
           todoInput.value = '';
@@ -4150,104 +4266,6 @@
         image: '-',
         isCustom: true // Flag to identify custom dishes
       };
-    }
-
-    function showCookingLevelDialog(dish) {
-      const cookingLevels = [
-        { value: 'Blue', label: '1. Blue (с кровью)' },
-        { value: 'Rare', label: '2. Rare (с кровью)' },
-        { value: 'Medium Rare', label: '3. Medium Rare (с кровью)' },
-        { value: 'Medium', label: '4. Medium (розовое мясо)' },
-        { value: 'Medium Well', label: '5. Medium Well (слегка розовое)' },
-        { value: 'Well Done', label: '6. Well Done (прожаренное)' }
-      ];
-
-      // Create modal dialog
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      `;
-
-      const dialog = document.createElement('div');
-      dialog.style.cssText = `
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 400px;
-        width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-      `;
-
-      dialog.innerHTML = `
-        <h3 style="margin: 0 0 15px 0; color: #333;">Выберите прожарку для "${dish.name}"</h3>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          ${cookingLevels.map(level => `
-            <button class="cooking-level-btn" data-level="${level.value}" style="
-              padding: 12px;
-              border: 2px solid #e0e0e0;
-              background: white;
-              border-radius: 6px;
-              cursor: pointer;
-              text-align: left;
-              transition: all 0.2s;
-            ">${level.label}</button>
-          `).join('')}
-        </div>
-        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
-          <button id="cancel-cooking" style="
-            padding: 8px 16px;
-            border: 1px solid #ccc;
-            background: white;
-            border-radius: 4px;
-            cursor: pointer;
-          ">Отмена</button>
-        </div>
-      `;
-
-      modal.appendChild(dialog);
-      document.body.appendChild(modal);
-
-      // Add event listeners
-      dialog.querySelectorAll('.cooking-level-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const level = btn.dataset.level;
-          addOrderToTable(tableNumber, dish, level);
-          todoInput.value = '';
-          renderTodoList();
-          document.body.removeChild(modal);
-        });
-
-        btn.addEventListener('mouseenter', () => {
-          btn.style.borderColor = '#007bff';
-          btn.style.backgroundColor = '#f8f9fa';
-        });
-
-        btn.addEventListener('mouseleave', () => {
-          btn.style.borderColor = '#e0e0e0';
-          btn.style.backgroundColor = 'white';
-        });
-      });
-
-      document.getElementById('cancel-cooking').addEventListener('click', () => {
-        document.body.removeChild(modal);
-      });
-
-      // Close on outside click
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          document.body.removeChild(modal);
-        }
-      });
     }
 
     function findDishByName(name) {
@@ -4462,10 +4480,17 @@
 
         const meta = document.createElement('div');
         meta.className = 'todo-meta';
-        meta.innerHTML = `
+        let metaHTML = `
           <span class="todo-price">${order.price}</span>
           <span class="todo-rkeeper">R_keeper: ${order.rkeeper}</span>
         `;
+        
+        // Add cooking level if exists
+        if (order.cookingLevel) {
+          metaHTML += `<span class="todo-cooking-level">Прожарка: <strong>${order.cookingLevel}</strong></span>`;
+        }
+        
+        meta.innerHTML = metaHTML;
 
         // Notes section
         const notesSection = document.createElement('div');

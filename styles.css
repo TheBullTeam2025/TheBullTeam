@@ -341,6 +341,59 @@ body:has(.learn-page) .app-header {
   justify-content: flex-end;
 }
 
+/* Cooking level modal */
+.cooking-level-content {
+  max-width: 500px;
+}
+
+.cooking-level-dish {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 12px;
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+
+.cooking-level-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cooking-level-btn {
+  padding: 16px 12px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.cooking-level-btn:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.cooking-level-btn .level-desc {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--foreground);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
 .order-form { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .form-row { display: flex; flex-direction: column; gap: 6px; }
 .form-row input {
@@ -553,7 +606,7 @@ body:has(.learn-page) .app-header {
   text-align: left;
 }
 
-.dish-composition, .dish-allergens {
+.dish-composition, .dish-allergens, .dish-cooking-level {
   margin-bottom: 6px;
   font-size: 13px;
   line-height: 1.4;
@@ -562,6 +615,24 @@ body:has(.learn-page) .app-header {
 
 .dish-composition {
   color: var(--card-foreground);
+}
+
+.dish-cooking-level {
+  color: var(--card-foreground);
+  font-weight: 500;
+}
+
+.cooking-level-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.cooking-level-value {
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(149, 35, 43, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .dish-allergens {
@@ -1561,6 +1632,18 @@ body:has(.learn-page) .app-header {
 
 .todo-rkeeper {
   color: var(--foreground);
+}
+
+.todo-cooking-level {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.todo-cooking-level strong {
+  font-weight: 700;
+  background: rgba(149, 35, 43, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .todo-notes-section {

@@ -368,7 +368,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-the-.jpg"
     },
     {
-      "name": "Б/А PAVST",
+      "name": "Б/А PABST (Пабст)",
       "gramm": "440 мл",
       "kbju": "-",
       "composition": [
@@ -1047,7 +1047,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chardonnay-balaklava-russia-125-.jpg"
     },
     {
-      "name": "CHARDONNAY BALAKLAVA, RUSSIA (750 МЛ)",
+      "name": "ШАРДОНЕ БАЛАКЛАВА | CHARDONNAY BALAKLAVA, RUSSIA (750 МЛ) ",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1065,7 +1065,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chardonnay-balaklava-russia-750-.jpg"
     },
     {
-      "name": "MARQUES DE LARES CAVA DO BRUT LOPEZ MORENAS, SPAIN (125 МЛ)",
+      "name": "МАРКЕС ДЕ ЛАРЕС КАВА DO БРЮТ ЛОПЕС МОРЕНАС | MARQUES DE LARES CAVA DO BRUT LOPEZ MORENAS, SPAIN (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1083,7 +1083,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/marques-de-lares-cava-do-brut-lopez-morenas-spain-125-.jpg"
     },
     {
-      "name": "MARQUES DE LARES CAVA DO BRUT LOPEZ MORENAS, SPAIN (750 МЛ)",
+      "name": "МАРКЕС ДЕ ЛАРЕС КАВА DO БРЮТ ЛОПЕС МОРЕНАС | MARQUES DE LARES CAVA DO BRUT LOPEZ MORENAS, SPAIN (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1101,7 +1101,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/marques-de-lares-cava-do-brut-lopez-morenas-spain-750-.jpg"
     },
     {
-      "name": "ИГРИСТОЕ ВИНО BRUNI PROSECCO BRUT (125 МЛ)",
+      "name": "ИГРИСТОЕ ВИНО БРУНИ ПРОСЕКО БРЮТ | BRUNI PROSECCO BRUT (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1119,7 +1119,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-bruni-prosecco-brut-125-.jpg"
     },
     {
-      "name": "ИГРИСТОЕ ВИНО BRUNI PROSECCO BRUT (750 МЛ)",
+      "name": "ИГРИСТОЕ ВИНО БРУНИ ПРОСЕКО БРЮТ | BRUNI PROSECCO BRUT (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1137,7 +1137,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-bruni-prosecco-brut-750-.jpg"
     },
     {
-      "name": "MARTINI ASTI",
+      "name": "МАРТИНИ АСТИ | MARTINI ASTI",
       "gramm": "187 мл",
       "kbju": "-",
       "composition": [
@@ -1155,7 +1155,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/martini-asti.jpg"
     },
     {
-      "name": "RIESLING HANS BAER, GERMANY (125 МЛ)",
+      "name": "РИСЛИНГ ПОЛУСУХОЕ, ХАНС БАЕР | RIESLING HANS BAER, GERMANY (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1173,7 +1173,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/riesling-hans-baer-germany-125-.jpg"
     },
     {
-      "name": "RIESLING HANS BAER, GERMANY (750 МЛ)",
+      "name": "РИСЛИНГ ПОЛУСУХОЕ, ХАНС БАЕР | RIESLING HANS BAER, GERMANY (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1191,7 +1191,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/riesling-hans-baer-germany-750-.jpg"
     },
     {
-      "name": "ALLA MODA PINO GRIGIO DELLE VENEZIE DOC SAN MATTEO, ITALY (125 МЛ)",
+      "name": "АЛЛА МОДА ПИНО ГРИДЖО ДЕЛЛЕ ВЕНЕЦИЯ DOC, СУХОЕ САН МАТТЕО | ALLA MODA PINO GRIGIO DELLE VENEZIE DOC SAN MATTEO, ITALY (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1209,7 +1209,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/alla-moda-pino-grigio-delle-venezie-doc-san-matteo-italy-125-.jpg"
     },
     {
-      "name": "ALLA MODA PINO GRIGIO DELLE VENEZIE DOC SAN MATTEO, ITALY (750 МЛ)",
+      "name": "АЛЛА МОДА ПИНО ГРИДЖО ДЕЛЛЕ ВЕНЕЦИЯ DOC, СУХОЕ САН МАТТЕО | ALLA MODA PINO GRIGIO DELLE VENEZIE DOC SAN MATTEO, ITALY (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1227,7 +1227,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/alla-moda-pino-grigio-delle-venezie-doc-san-matteo-italy-750-.jpg"
     },
     {
-      "name": "CHARDONNAY LAKKY CALABRIA WINES, AUSTRALIA (125 МЛ)",
+      "name": "ПОЛУСУХОЕ ШАРДОНЕ ЛАККИ КАЛАБРИ ВАЙНС | CHARDONNAY LAKKY CALABRIA WINES, AUSTRALIA (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1245,7 +1245,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chardonnay-lakky-calabria-wines-australia-125-.jpg"
     },
     {
-      "name": "CHARDONNAY LAKKY CALABRIA WINES, AUSTRALIA (750 МЛ)",
+      "name": "ПОЛУСУХОЕ ШАРДОНЕ ЛАККИ КАЛАБРИ ВАЙНС | CHARDONNAY LAKKY CALABRIA WINES, AUSTRALIA (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1263,7 +1263,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chardonnay-lakky-calabria-wines-australia-750-.jpg"
     },
     {
-      "name": "SAUVIGNON BLANC, LE GRAND NOIR (125 МЛ)",
+      "name": "СОВИНЬОН БЛАН, СУХОЕ, ЛАНГЕДОК-РУССИЙОН | SAUVIGNON BLANC, LE GRAND NOIR (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1281,7 +1281,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/sauvignon-blanc-le-grand-noir-125-.jpg"
     },
     {
-      "name": "SAUVIGNON BLANC, LE GRAND NOIR (750 МЛ)",
+      "name": "СОВИНЬОН БЛАН, СУХОЕ, ЛАНГЕДОК-РУССИЙОН | SAUVIGNON BLANC, LE GRAND NOIR (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1299,7 +1299,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/sauvignon-blanc-le-grand-noir-750-.jpg"
     },
     {
-      "name": "MARE&GRILL VINHO VERDE, PORTUGAL",
+      "name": "МАРЕ & ГРИЛЬ ВИНЬЮ ВЕРДЕ, ПОЛУСУХОЕ | MARE&GRILL VINHO VERDE, PORTUGAL",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1317,7 +1317,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/maregrill-vinho-verde-portugal.jpg"
     },
     {
-      "name": "ALASANI VALLEY ASKANELI 2024",
+      "name": "АЛАЗАНСКАЯ ДОЛИНА ОТ АСКАНЕЛИ, ПОЛУСЛАДКОЕ | ALASANI VALLEY ASKANELI 2024",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1335,7 +1335,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/alasani-valley-askaneli-2024.jpg"
     },
     {
-      "name": "RAICES LA MANCHA DO BODEGAS FERNANDO CASTRO, SPAIN (125 МЛ)",
+      "name": "РАЙСЕС ЛА МАНЧА DO БОДЕТАС ФЕРНАНДО КАСТРО | RAICES LA MANCHA DO BODEGAS FERNANDO CASTRO, SPAIN (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1353,7 +1353,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/raices-la-mancha-do-bodegas-fernando-castro-spain-125-.jpg"
     },
     {
-      "name": "RAICES LA MANCHA DO BODEGAS FERNANDO CASTRO, SPAIN (750 МЛ)",
+      "name": "РАЙСЕС ЛА МАНЧА DO БОДЕТАС ФЕРНАНДО КАСТРО | RAICES LA MANCHA DO BODEGAS FERNANDO CASTRO, SPAIN (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1371,7 +1371,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/raices-la-mancha-do-bodegas-fernando-castro-spain-750-.jpg"
     },
     {
-      "name": "PRIMITIVO PRIMASOLE, APULIA, ITALY (125 МЛ)",
+      "name": "ПРИМИТИВО ПРИМАСОЛЕ, АЛУПИЯ, ИТАЛИЯ, ПОЛУСУХОЕ | PRIMITIVO PRIMASOLE, APULIA, ITALY (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1389,7 +1389,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/primitivo-primasole-apulia-italy-125-.jpg"
     },
     {
-      "name": "PRIMITIVO PRIMASOLE, APULIA, ITALY (750 МЛ)",
+      "name": "ПРИМИТИВО ПРИМАСОЛЕ, АЛУПИЯ, ИТАЛИЯ, ПОЛУСУХОЕ | PRIMITIVO PRIMASOLE, APULIA, ITALY (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1407,7 +1407,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/primitivo-primasole-apulia-italy-750-.jpg"
     },
     {
-      "name": "ВИНО GREAT EXPECTATIONS SHIRAZ 2024 (125 МЛ)",
+      "name": "ВИНО ГРЕЙТ ЭКСПЕКТЕЙШНС ШИРАЗ ЮАР | GREAT EXPECTATIONS SHIRAZ 2024 (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1425,7 +1425,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-great-expectations-shiraz-2024-125-.jpg"
     },
     {
-      "name": "ВИНО GREAT EXPECTATIONS SHIRAZ 2024 (750 МЛ)",
+      "name": "ВИНО ГРЕЙТ ЭКСПЕКТЕЙШНС ШИРАЗ ЮАР | GREAT EXPECTATIONS SHIRAZ 2024 (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1443,7 +1443,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-great-expectations-shiraz-2024-750-.jpg"
     },
     {
-      "name": "LA CROIX DU PIN MERLOT 2023 (125 МЛ)",
+      "name": "ЛЯ КРУА ДЮ ПЭН МЕРЛО КРАСНОЕ СУХОЕ | LA CROIX DU PIN MERLOT 2023 (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1461,7 +1461,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/la-croix-du-pin-merlot-2023-125-.jpg"
     },
     {
-      "name": "LA CROIX DU PIN MERLOT 2023 (750 МЛ)",
+      "name": "ЛЯ КРУА ДЮ ПЭН МЕРЛО КРАСНОЕ СУХОЕ | LA CROIX DU PIN MERLOT 2023 (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1479,7 +1479,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/la-croix-du-pin-merlot-2023-750-.jpg"
     },
     {
-      "name": "LA CROIX DU PIN MALBEC 2023 (125 МЛ)",
+      "name": "ЛЯ КРУА ДЮ ПЭН МАЛЬБЕК КРАСНОЕ СУХОЕ | LA CROIX DU PIN MALBEC 2023 (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1497,7 +1497,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/la-croix-du-pin-malbec-2023-125-.jpg"
     },
     {
-      "name": "LA CROIX DU PIN MALBEC 2023 (750 МЛ)",
+      "name": "ЛЯ КРУА ДЮ ПЭН МАЛЬБЕК КРАСНОЕ СУХОЕ | LA CROIX DU PIN MALBEC 2023 (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1515,7 +1515,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/la-croix-du-pin-malbec-2023-750-.jpg"
     },
     {
-      "name": "CONTI SERRISTORI CHIANTI, TOSCANA, ITALY (125 МЛ)",
+      "name": "КОНТИ СЕРРИСТОРИ КЬЯНТИ, ТОСКАНА, ИТАЛИЯ, СУХОЕ | CONTI SERRISTORI CHIANTI, TOSCANA, ITALY (125 МЛ)",
       "gramm": "125 мл",
       "kbju": "-",
       "composition": [
@@ -1533,7 +1533,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/conti-serristori-chianti-toscana-italy-125-.jpg"
     },
     {
-      "name": "CONTI SERRISTORI CHIANTI, TOSCANA, ITALY (750 МЛ)",
+      "name": "КОНТИ СЕРРИСТОРИ КЬЯНТИ, ТОСКАНА, ИТАЛИЯ, СУХОЕ | CONTI SERRISTORI CHIANTI, TOSCANA, ITALY (750 МЛ)",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1551,7 +1551,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/conti-serristori-chianti-toscana-italy-750-.jpg"
     },
     {
-      "name": "PINOT NOIR LE GRAND NOIR LES CELLIERS JEAN D'ALIBERT, FRANCE",
+      "name": "ПИНО НУАР ЛЕ ГРАН НУАР ЛЕ СЕЛЬЕ ЖАН Д'АЛИБЕР, ФРАНЦИЯ, ПОЛУСУХОЕ | PINOT NOIR LE GRAND NOIR LES CELLIERS JEAN D'ALIBERT, FRANCE",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1569,7 +1569,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/pinot-noir-le-grand-noir-les-celliers-jean-dalibert-france.jpg"
     },
     {
-      "name": "VALPOLICELLA SANTE RIVE CIELO, ITALY",
+      "name": "ВАЛЬПОЛИЧЕЛЛА, СУХОЕ САНТЕ РИВЕ ЧЕЛО | VALPOLICELLA SANTE RIVE CIELO, ITALY",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1587,7 +1587,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/valpolicella-sante-rive-cielo-italy.jpg"
     },
     {
-      "name": "CHATEAU BELBEC SAPERAVI OLYMP, RUSSIA",
+      "name": "ШАТО БЕЛЬБЕК САПЕРАВИ ОЛИМП, РОССИЯ, ПОЛУСЛАДКОЕ | CHATEAU BELBEC SAPERAVI OLYMP, RUSSIA",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1605,7 +1605,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chateau-belbec-saperavi-olymp-russia.jpg"
     },
     {
-      "name": "KARAS RED BLEND 2023",
+      "name": "КАРАС РЕД БЛЕНД, АРМЕНИЯ, СУХОЕ | KARAS RED BLEND 2023",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1623,7 +1623,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/karas-red-blend-2023.jpg"
     },
     {
-      "name": "G7 CABERNET SAUVIGNON CHILE 2022",
+      "name": "Г7 КАБЕРНЕТ СОВИНЬОН ЧИЛИ, СУХОЕ | G7 CABERNET SAUVIGNON CHILE 2022",
       "gramm": "750 мл",
       "kbju": "-",
       "composition": [
@@ -1641,7 +1641,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/g7-cabernet-sauvignon-chile-2022.jpg"
     },
     {
-      "name": "MARTINI BIANCO",
+      "name": "МАРТИНИ БЬЯНКО | MARTINI BIANCO",
       "gramm": "100 мл",
       "kbju": "-",
       "composition": [
@@ -1659,7 +1659,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/martini-bianco.jpg"
     },
     {
-      "name": "MARTINI EXTRA DRY",
+      "name": "МАРТИНИ ЭКСТРА ДРАЙ | MARTINI EXTRA DRY",
       "gramm": "100 мл",
       "kbju": "-",
       "composition": [
@@ -1677,7 +1677,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/martini-extra-dry.jpg"
     },
     {
-      "name": "MARTINI ROSSO",
+      "name": "МАРТИНИ РОССО | MARTINI ROSSO",
       "gramm": "100 мл",
       "kbju": "-",
       "composition": [
@@ -1695,7 +1695,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/martini-rosso.jpg"
     },
     {
-      "name": "MARTINI FIERO",
+      "name": "МАРТИНИ ФИЕРО | MARTINI FIERO",
       "gramm": "100 мл",
       "kbju": "-",
       "composition": [
@@ -1713,7 +1713,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/martini-fiero.jpg"
     },
     {
-      "name": "BARRISTER DRY",
+      "name": "БАРРИСТЕР ДРАЙ | BARRISTER DRY",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1731,7 +1731,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/barrister-dry.jpg"
     },
     {
-      "name": "BARRISTER PINK",
+      "name": "БАРРИСТЕР ПИНК | BARRISTER PINK",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1749,7 +1749,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/barrister-pink.jpg"
     },
     {
-      "name": "HOPPERS ORIGINAL",
+      "name": "ХОЛПЕРС ORIGINAL | HOPPERS ORIGINAL",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1767,7 +1767,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/hoppers-original.jpg"
     },
     {
-      "name": "HOPPERS MANDARIN & ROSEMARY",
+      "name": "ХОЛПЕРС МАНДАРИН & РОЗМАРИН | HOPPERS MANDARIN & ROSEMARY",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1785,7 +1785,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/hoppers-mandarin-rosemary.jpg"
     },
     {
-      "name": "HOPPERS LAVENDER & THYME",
+      "name": "ХОЛПЕРС ЛАВАНДА & ТИМЬЯН | HOPPERS LAVENDER & THYME",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1803,7 +1803,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/hoppers-lavender-thyme.jpg"
     },
     {
-      "name": "BOMBAY SAPPHIRE",
+      "name": "БОМБЕЙ САПФИР | BOMBAY SAPPHIRE",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1821,7 +1821,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/bombay-sapphire.jpg"
     },
     {
-      "name": "CAMPARI",
+      "name": "КАМПАРИ | CAMPARI",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1839,7 +1839,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/campari.jpg"
     },
     {
-      "name": "APEROL",
+      "name": "АПЕРОЛЬ | APEROL",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1857,7 +1857,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/aperol.jpg"
     },
     {
-      "name": "AMARETTO",
+      "name": "АМАРЕТТО | AMARETTO",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1875,7 +1875,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/amaretto.jpg"
     },
     {
-      "name": "LIMONCELLO",
+      "name": "ЛИМОНЧЕЛЛО | LIMONCELLO",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1893,7 +1893,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/limoncello.jpg"
     },
     {
-      "name": "MAMONT BLOOD",
+      "name": "МАМОНТ БЛУД | MAMONT BLOOD",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1911,7 +1911,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/mamont-blood.jpg"
     },
     {
-      "name": "SAMBUCA",
+      "name": "САМБУКА | SAMBUCA",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1929,7 +1929,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/sambuca.jpg"
     },
     {
-      "name": "JAGERMEISTER",
+      "name": "ЯГЕРМЕЙСТЕР | JAGERMEISTER",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1947,7 +1947,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/jagermeister.jpg"
     },
     {
-      "name": "OAKHEART ORIGINAL",
+      "name": "ОАКХАРТ ОРИДЖИНАЛ | OAKHEART ORIGINAL",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1965,7 +1965,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/oakheart-original.jpg"
     },
     {
-      "name": "TAKAMAKA BLANC",
+      "name": "ТАКАМАКА БЛАН | TAKAMAKA BLANC",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -1983,7 +1983,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/takamaka-blanc.jpg"
     },
     {
-      "name": "MEZAN JAMAICA XO",
+      "name": "МЕЗАН ЯМАЙКА ХО | MEZAN JAMAICA XO",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2001,7 +2001,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/mezan-jamaica-xo.jpg"
     },
     {
-      "name": "WILLIAM LAWSON'S",
+      "name": "ВИЛЬЯМ ЛОУСОНС | WILLIAM LAWSON'S",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2019,7 +2019,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/william-lawsons.jpg"
     },
     {
-      "name": "BUSHMILLS",
+      "name": "БУШМИЛС | BUSHMILLS",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2037,7 +2037,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/bushmills.jpg"
     },
     {
-      "name": "BUSHMILLS SINGLE MOLT 10 ЛЕТ",
+      "name": "БУШМИЛС СИНГЛ МОЛТ 10 ЛЕТ | BUSHMILLS SINGLE MOLT 10 ЛЕТ",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2055,7 +2055,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/bushmills-single-molt-10-.jpg"
     },
     {
-      "name": "JAMESON",
+      "name": "ДЖЕМЕСОН | JAMESON",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2073,7 +2073,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/jameson.jpg"
     },
     {
-      "name": "CHIVAS REGAL 12 ЛЕТ",
+      "name": "ЧИВАС РИГАЛ 12 ЛЕТ | CHIVAS REGAL 12 ЛЕТ",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2091,7 +2091,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/chivas-regal-12-.jpg"
     },
     {
-      "name": "GASTRONOM BLEND NO4 FOR FISH DISHES",
+      "name": "ГАСТРОНОМ КУПАЖ NO4 | GASTRONOM BLEND NO4 FOR FISH DISHES",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2109,7 +2109,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/gastronom-blend-no4-for-fish-dishes.jpg"
     },
     {
-      "name": "GASTRONOM BLEND NO7 FOR MEAT DISHES",
+      "name": "ГАСТРОНОМ КУПАЖ NO7 | GASTRONOM BLEND NO7 FOR MEAT DISHES",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2127,7 +2127,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/gastronom-blend-no7-for-meat-dishes.jpg"
     },
     {
-      "name": "ROYAL",
+      "name": "ЦАРСКАЯ | ROYAL",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2145,7 +2145,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/royal.jpg"
     },
     {
-      "name": "MAMONT",
+      "name": "МАМОНТ | MAMONT",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2397,7 +2397,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/bache-gabrielsen-tre-kors-vs.jpg"
     },
     {
-      "name": "JOSE CUERVO ESPECIAL SILVER",
+      "name": "ХОСЕ КУЭРВО ЭСПЕСИАЛЬ СИЛЬВЕР | JOSE CUERVO ESPECIAL SILVER",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2415,7 +2415,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/jose-cuervo-especial-silver.jpg"
     },
     {
-      "name": "JOSE CUERVO ESPECIAL REPOSADO",
+      "name": "ХОСЕ КУЭРВО ЭСПЕСИАЛЬ РЕПОСАДО | JOSE CUERVO ESPECIAL REPOSADO",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2433,7 +2433,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/jose-cuervo-especial-reposado.jpg"
     },
     {
-      "name": "ESPOLON BLANCO",
+      "name": "ЭСПОЛОН БЛАНКО | ESPOLON BLANCO",
       "gramm": "50 мл",
       "kbju": "-",
       "composition": [
@@ -2559,7 +2559,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-.jpg"
     },
     {
-      "name": "ВИСКИ CAYSP",
+      "name": "ВИСКИ САУЭР",
       "gramm": "200 мл",
       "kbju": "-",
       "composition": [
@@ -2625,7 +2625,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-.jpg"
     },
     {
-      "name": "CAPTIV СПРИТЦ",
+      "name": "САРТИ СПРИТЦ",
       "gramm": "250 мл",
       "kbju": "-",
       "composition": [
@@ -2936,7 +2936,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/-.jpg"
     },
     {
-      "name": "THE БЫК NUMBER ONE",
+      "name": "THE БЫК НОМЕР 1 | THE БЫК NUMBER ONE",
       "gramm": "200 мл",
       "kbju": "-",
       "composition": [
@@ -2960,7 +2960,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/the-number-one.jpg"
     },
     {
-      "name": "THE БЫК NUMBER TWO",
+      "name": "THE БЫК НОМЕР 2 | THE БЫК NUMBER TWO",
       "gramm": "200 мл",
       "kbju": "-",
       "composition": [
@@ -2984,7 +2984,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/the-number-two.jpg"
     },
     {
-      "name": "THE БЫК NUMBER THREE",
+      "name": "THE БЫК НОМЕР 3 | THE БЫК NUMBER THREE",
       "gramm": "200 мл",
       "kbju": "-",
       "composition": [
@@ -3097,7 +3097,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/5-52.jpg"
     },
     {
-      "name": "RED SET",
+      "name": "КРАСНЫЙ СЕТ | RED SET",
       "gramm": "3x50 мл",
       "kbju": "-",
       "composition": [
@@ -3120,7 +3120,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/red-set.jpg"
     },
     {
-      "name": "YELLOW SET",
+      "name": "ЖЕЛТЫЙ СЕТ | YELLOW SET",
       "gramm": "3x50 мл",
       "kbju": "-",
       "composition": [
@@ -3143,7 +3143,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/yellow-set.jpg"
     },
     {
-      "name": "GREEN SET",
+      "name": "ЗЕЛЕНЫЙ СЕТ | GREEN SET",
       "gramm": "3x50 мл",
       "kbju": "-",
       "composition": [
@@ -3167,7 +3167,7 @@ const BAR_DRINKS_DATA = {
       "image": "./images/green-set.jpg"
     },
     {
-      "name": "COMBO SET",
+      "name": "КОМБО СЕТ | COMBO SET",
       "gramm": "9x50 мл",
       "kbju": "-",
       "composition": [
