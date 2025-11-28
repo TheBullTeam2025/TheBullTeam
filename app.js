@@ -430,6 +430,118 @@
     });
   }
 
+  function showIceCreamFlavorModal(dishName, callback) {
+    const flavors = {
+      vanilla: { name: 'Ваниль', emoji: '🤍' },
+      chocolate: { name: 'Шоколад', emoji: '🤎' },
+      strawberry: { name: 'Клубника', emoji: '🩷' }
+    };
+    
+    let selectedFlavors = { vanilla: 0, chocolate: 0, strawberry: 0 };
+    let totalScoops = 0;
+    
+    const modal = document.createElement('div');
+    modal.className = 'rename-modal ice-cream-modal';
+    modal.innerHTML = `
+      <div class="rename-content ice-cream-content">
+        <div class="rename-title">Выберите вкусы мороженого</div>
+        <div class="ice-cream-dish">${dishName}</div>
+        <div class="ice-cream-subtitle">Выберите 3 шарика (можно одинаковые)</div>
+        
+        <div class="ice-cream-flavors">
+          <div class="ice-cream-flavor-item" data-flavor="vanilla">
+            <div class="flavor-name">${flavors.vanilla.emoji} ${flavors.vanilla.name}</div>
+            <div class="flavor-controls">
+              <button class="flavor-btn flavor-minus" data-flavor="vanilla">−</button>
+              <span class="flavor-count" data-flavor="vanilla">0</span>
+              <button class="flavor-btn flavor-plus" data-flavor="vanilla">+</button>
+            </div>
+          </div>
+          
+          <div class="ice-cream-flavor-item" data-flavor="chocolate">
+            <div class="flavor-name">${flavors.chocolate.emoji} ${flavors.chocolate.name}</div>
+            <div class="flavor-controls">
+              <button class="flavor-btn flavor-minus" data-flavor="chocolate">−</button>
+              <span class="flavor-count" data-flavor="chocolate">0</span>
+              <button class="flavor-btn flavor-plus" data-flavor="chocolate">+</button>
+            </div>
+          </div>
+          
+          <div class="ice-cream-flavor-item" data-flavor="strawberry">
+            <div class="flavor-name">${flavors.strawberry.emoji} ${flavors.strawberry.name}</div>
+            <div class="flavor-controls">
+              <button class="flavor-btn flavor-minus" data-flavor="strawberry">−</button>
+              <span class="flavor-count" data-flavor="strawberry">0</span>
+              <button class="flavor-btn flavor-plus" data-flavor="strawberry">+</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ice-cream-total">Выбрано шариков: <span id="total-scoops">0</span> / 3</div>
+        
+        <div class="ice-cream-actions">
+          <button class="btn secondary" id="ice-cream-cancel">Отмена</button>
+          <button class="btn primary" id="ice-cream-confirm" disabled>Подтвердить</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const updateTotal = () => {
+      totalScoops = selectedFlavors.vanilla + selectedFlavors.chocolate + selectedFlavors.strawberry;
+      modal.querySelector('#total-scoops').textContent = totalScoops;
+      modal.querySelector('#ice-cream-confirm').disabled = totalScoops !== 3;
+    };
+    
+    // Plus buttons
+    modal.querySelectorAll('.flavor-plus').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const flavor = btn.dataset.flavor;
+        if (totalScoops < 3) {
+          selectedFlavors[flavor]++;
+          modal.querySelector(`.flavor-count[data-flavor="${flavor}"]`).textContent = selectedFlavors[flavor];
+          updateTotal();
+        }
+      });
+    });
+    
+    // Minus buttons
+    modal.querySelectorAll('.flavor-minus').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const flavor = btn.dataset.flavor;
+        if (selectedFlavors[flavor] > 0) {
+          selectedFlavors[flavor]--;
+          modal.querySelector(`.flavor-count[data-flavor="${flavor}"]`).textContent = selectedFlavors[flavor];
+          updateTotal();
+        }
+      });
+    });
+    
+    // Confirm button
+    modal.querySelector('#ice-cream-confirm').addEventListener('click', () => {
+      const flavorText = [];
+      if (selectedFlavors.vanilla > 0) flavorText.push(`${flavors.vanilla.name} x${selectedFlavors.vanilla}`);
+      if (selectedFlavors.chocolate > 0) flavorText.push(`${flavors.chocolate.name} x${selectedFlavors.chocolate}`);
+      if (selectedFlavors.strawberry > 0) flavorText.push(`${flavors.strawberry.name} x${selectedFlavors.strawberry}`);
+      
+      document.body.removeChild(modal);
+      callback(flavorText.join(', '));
+    });
+    
+    // Cancel button
+    modal.querySelector('#ice-cream-cancel').addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
   async function loadDb(forceReload = false) {
     if (db && !forceReload) return db;
     try {
@@ -3471,6 +3583,21 @@
             details.appendChild(cookingLevel);
           }
           
+          // Ice cream flavors
+          if (order.iceCreamFlavors) {
+            const iceCreamFlavors = document.createElement('div');
+            iceCreamFlavors.className = 'dish-ice-cream-flavors';
+            const flavorsLabel = document.createElement('span');
+            flavorsLabel.textContent = 'Вкусы: ';
+            flavorsLabel.className = 'detail-label ice-cream-flavors-label';
+            const flavorsText = document.createElement('span');
+            flavorsText.textContent = order.iceCreamFlavors;
+            flavorsText.className = 'ice-cream-flavors-value';
+            iceCreamFlavors.appendChild(flavorsLabel);
+            iceCreamFlavors.appendChild(flavorsText);
+            details.appendChild(iceCreamFlavors);
+          }
+          
           if (order.allergens && order.allergens !== '—') {
             const allergens = document.createElement('div');
             allergens.className = 'dish-allergens';
@@ -3739,8 +3866,11 @@
                            !dishName.includes('индюш') &&
                            !dishName.includes('рыб');
             
-            // Function to add dish with optional cooking level
-            const addDishToTable = (cookingLevel = null) => {
+            // Check if this is ice cream
+            const isIceCream = dishName.includes('мороженое') || dishName.includes('мороженное');
+            
+            // Function to add dish with optional cooking level or ice cream flavors
+            const addDishToTable = (cookingLevel = null, iceCreamFlavors = null) => {
               // Initialize table orders if not exists
               if (!tableOrders[tableNumber]) {
                 tableOrders[tableNumber] = [];
@@ -3759,7 +3889,8 @@
                 createdAt: Date.now(),
                 addedAt: Date.now(),
                 category: d.category || '', // Store category for sorting
-                cookingLevel: cookingLevel // Store cooking level for steaks
+                cookingLevel: cookingLevel, // Store cooking level for steaks
+                iceCreamFlavors: iceCreamFlavors // Store ice cream flavors
               });
               saveTableOrders();
               // Auto-sort after adding
@@ -3783,10 +3914,15 @@
             // If it's a steak, show cooking level modal
             if (isSteak) {
               showCookingLevelModal(d.name, (selectedLevel) => {
-                addDishToTable(selectedLevel);
+                addDishToTable(selectedLevel, null);
+              });
+            } else if (isIceCream) {
+              // If it's ice cream, show flavor selection modal
+              showIceCreamFlavorModal(d.name, (selectedFlavors) => {
+                addDishToTable(null, selectedFlavors);
               });
             } else {
-              addDishToTable();
+              addDishToTable(null, null);
             }
           });
           
@@ -4488,6 +4624,11 @@
         // Add cooking level if exists
         if (order.cookingLevel) {
           metaHTML += `<span class="todo-cooking-level">Прожарка: <strong>${order.cookingLevel}</strong></span>`;
+        }
+        
+        // Add ice cream flavors if exists
+        if (order.iceCreamFlavors) {
+          metaHTML += `<span class="todo-ice-cream-flavors">Вкусы: <strong>${order.iceCreamFlavors}</strong></span>`;
         }
         
         meta.innerHTML = metaHTML;

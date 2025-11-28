@@ -394,6 +394,128 @@ body:has(.learn-page) .app-header {
   margin-top: 4px;
 }
 
+/* Ice cream flavor modal */
+.ice-cream-content {
+  max-width: 450px;
+}
+
+.ice-cream-dish {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 8px;
+  text-align: center;
+  padding: 12px;
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+
+.ice-cream-subtitle {
+  font-size: 14px;
+  color: var(--foreground);
+  text-align: center;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.ice-cream-flavors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ice-cream-flavor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.flavor-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.flavor-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flavor-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flavor-btn:hover {
+  opacity: 0.9;
+}
+
+.flavor-count {
+  min-width: 24px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.ice-cream-total {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--accent);
+  border-radius: var(--radius);
+}
+
+.ice-cream-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Ice cream flavors display in order */
+.dish-ice-cream-flavors {
+  color: var(--card-foreground);
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.ice-cream-flavors-label {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.ice-cream-flavors-value {
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(149, 35, 43, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .order-form { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .form-row { display: flex; flex-direction: column; gap: 6px; }
 .form-row input {
@@ -1640,6 +1762,18 @@ body:has(.learn-page) .app-header {
 }
 
 .todo-cooking-level strong {
+  font-weight: 700;
+  background: rgba(149, 35, 43, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.todo-ice-cream-flavors {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.todo-ice-cream-flavors strong {
   font-weight: 700;
   background: rgba(149, 35, 43, 0.1);
   padding: 2px 6px;
